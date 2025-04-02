@@ -7,10 +7,14 @@ import (
 	"errors"
 	"fmt"
 	"patient/ent/outpatient"
+	"patient/ent/patient"
+	"time"
 
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // OutpatientCreate is the builder for creating a Outpatient entity.
@@ -21,6 +25,37 @@ type OutpatientCreate struct {
 	conflict []sql.ConflictOption
 }
 
+// SetPatientID sets the "patient_id" field.
+func (oc *OutpatientCreate) SetPatientID(u uuid.UUID) *OutpatientCreate {
+	oc.mutation.SetPatientID(u)
+	return oc
+}
+
+// SetRegisterDate sets the "register_date" field.
+func (oc *OutpatientCreate) SetRegisterDate(t time.Time) *OutpatientCreate {
+	oc.mutation.SetRegisterDate(t)
+	return oc
+}
+
+// SetID sets the "id" field.
+func (oc *OutpatientCreate) SetID(u uuid.UUID) *OutpatientCreate {
+	oc.mutation.SetID(u)
+	return oc
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (oc *OutpatientCreate) SetNillableID(u *uuid.UUID) *OutpatientCreate {
+	if u != nil {
+		oc.SetID(*u)
+	}
+	return oc
+}
+
+// SetPatient sets the "patient" edge to the Patient entity.
+func (oc *OutpatientCreate) SetPatient(p *Patient) *OutpatientCreate {
+	return oc.SetPatientID(p.ID)
+}
+
 // Mutation returns the OutpatientMutation object of the builder.
 func (oc *OutpatientCreate) Mutation() *OutpatientMutation {
 	return oc.mutation
@@ -28,6 +63,7 @@ func (oc *OutpatientCreate) Mutation() *OutpatientMutation {
 
 // Save creates the Outpatient in the database.
 func (oc *OutpatientCreate) Save(ctx context.Context) (*Outpatient, error) {
+	oc.defaults()
 	return withHooks(ctx, oc.sqlSave, oc.mutation, oc.hooks)
 }
 
@@ -53,8 +89,25 @@ func (oc *OutpatientCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (oc *OutpatientCreate) defaults() {
+	if _, ok := oc.mutation.ID(); !ok {
+		v := outpatient.DefaultID()
+		oc.mutation.SetID(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (oc *OutpatientCreate) check() error {
+	if _, ok := oc.mutation.PatientID(); !ok {
+		return &ValidationError{Name: "patient_id", err: errors.New(`ent: missing required field "Outpatient.patient_id"`)}
+	}
+	if _, ok := oc.mutation.RegisterDate(); !ok {
+		return &ValidationError{Name: "register_date", err: errors.New(`ent: missing required field "Outpatient.register_date"`)}
+	}
+	if len(oc.mutation.PatientIDs()) == 0 {
+		return &ValidationError{Name: "patient", err: errors.New(`ent: missing required edge "Outpatient.patient"`)}
+	}
 	return nil
 }
 
@@ -69,8 +122,13 @@ func (oc *OutpatientCreate) sqlSave(ctx context.Context) (*Outpatient, error) {
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	oc.mutation.id = &_node.ID
 	oc.mutation.done = true
 	return _node, nil
@@ -79,9 +137,34 @@ func (oc *OutpatientCreate) sqlSave(ctx context.Context) (*Outpatient, error) {
 func (oc *OutpatientCreate) createSpec() (*Outpatient, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Outpatient{config: oc.config}
-		_spec = sqlgraph.NewCreateSpec(outpatient.Table, sqlgraph.NewFieldSpec(outpatient.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(outpatient.Table, sqlgraph.NewFieldSpec(outpatient.FieldID, field.TypeUUID))
 	)
 	_spec.OnConflict = oc.conflict
+	if id, ok := oc.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
+	}
+	if value, ok := oc.mutation.RegisterDate(); ok {
+		_spec.SetField(outpatient.FieldRegisterDate, field.TypeTime, value)
+		_node.RegisterDate = value
+	}
+	if nodes := oc.mutation.PatientIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   outpatient.PatientTable,
+			Columns: []string{outpatient.PatientColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(patient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.PatientID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -89,11 +172,17 @@ func (oc *OutpatientCreate) createSpec() (*Outpatient, *sqlgraph.CreateSpec) {
 // of the `INSERT` statement. For example:
 //
 //	client.Outpatient.Create().
+//		SetPatientID(v).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
 //			sql.ResolveWithNewValues(),
 //		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.OutpatientUpsert) {
+//			SetPatientID(v+v).
+//		}).
 //		Exec(ctx)
 func (oc *OutpatientCreate) OnConflict(opts ...sql.ConflictOption) *OutpatientUpsertOne {
 	oc.conflict = opts
@@ -128,16 +217,48 @@ type (
 	}
 )
 
-// UpdateNewValues updates the mutable fields using the new values that were set on create.
+// SetPatientID sets the "patient_id" field.
+func (u *OutpatientUpsert) SetPatientID(v uuid.UUID) *OutpatientUpsert {
+	u.Set(outpatient.FieldPatientID, v)
+	return u
+}
+
+// UpdatePatientID sets the "patient_id" field to the value that was provided on create.
+func (u *OutpatientUpsert) UpdatePatientID() *OutpatientUpsert {
+	u.SetExcluded(outpatient.FieldPatientID)
+	return u
+}
+
+// SetRegisterDate sets the "register_date" field.
+func (u *OutpatientUpsert) SetRegisterDate(v time.Time) *OutpatientUpsert {
+	u.Set(outpatient.FieldRegisterDate, v)
+	return u
+}
+
+// UpdateRegisterDate sets the "register_date" field to the value that was provided on create.
+func (u *OutpatientUpsert) UpdateRegisterDate() *OutpatientUpsert {
+	u.SetExcluded(outpatient.FieldRegisterDate)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
 //	client.Outpatient.Create().
 //		OnConflict(
 //			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(outpatient.FieldID)
+//			}),
 //		).
 //		Exec(ctx)
 func (u *OutpatientUpsertOne) UpdateNewValues() *OutpatientUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(outpatient.FieldID)
+		}
+	}))
 	return u
 }
 
@@ -168,6 +289,34 @@ func (u *OutpatientUpsertOne) Update(set func(*OutpatientUpsert)) *OutpatientUps
 	return u
 }
 
+// SetPatientID sets the "patient_id" field.
+func (u *OutpatientUpsertOne) SetPatientID(v uuid.UUID) *OutpatientUpsertOne {
+	return u.Update(func(s *OutpatientUpsert) {
+		s.SetPatientID(v)
+	})
+}
+
+// UpdatePatientID sets the "patient_id" field to the value that was provided on create.
+func (u *OutpatientUpsertOne) UpdatePatientID() *OutpatientUpsertOne {
+	return u.Update(func(s *OutpatientUpsert) {
+		s.UpdatePatientID()
+	})
+}
+
+// SetRegisterDate sets the "register_date" field.
+func (u *OutpatientUpsertOne) SetRegisterDate(v time.Time) *OutpatientUpsertOne {
+	return u.Update(func(s *OutpatientUpsert) {
+		s.SetRegisterDate(v)
+	})
+}
+
+// UpdateRegisterDate sets the "register_date" field to the value that was provided on create.
+func (u *OutpatientUpsertOne) UpdateRegisterDate() *OutpatientUpsertOne {
+	return u.Update(func(s *OutpatientUpsert) {
+		s.UpdateRegisterDate()
+	})
+}
+
 // Exec executes the query.
 func (u *OutpatientUpsertOne) Exec(ctx context.Context) error {
 	if len(u.create.conflict) == 0 {
@@ -184,7 +333,12 @@ func (u *OutpatientUpsertOne) ExecX(ctx context.Context) {
 }
 
 // Exec executes the UPSERT query and returns the inserted/updated ID.
-func (u *OutpatientUpsertOne) ID(ctx context.Context) (id int, err error) {
+func (u *OutpatientUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: OutpatientUpsertOne.ID is not supported by MySQL driver. Use OutpatientUpsertOne.Exec instead")
+	}
 	node, err := u.create.Save(ctx)
 	if err != nil {
 		return id, err
@@ -193,7 +347,7 @@ func (u *OutpatientUpsertOne) ID(ctx context.Context) (id int, err error) {
 }
 
 // IDX is like ID, but panics if an error occurs.
-func (u *OutpatientUpsertOne) IDX(ctx context.Context) int {
+func (u *OutpatientUpsertOne) IDX(ctx context.Context) uuid.UUID {
 	id, err := u.ID(ctx)
 	if err != nil {
 		panic(err)
@@ -220,6 +374,7 @@ func (ocb *OutpatientCreateBulk) Save(ctx context.Context) ([]*Outpatient, error
 	for i := range ocb.builders {
 		func(i int, root context.Context) {
 			builder := ocb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*OutpatientMutation)
 				if !ok {
@@ -247,10 +402,6 @@ func (ocb *OutpatientCreateBulk) Save(ctx context.Context) ([]*Outpatient, error
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})
@@ -299,6 +450,11 @@ func (ocb *OutpatientCreateBulk) ExecX(ctx context.Context) {
 //			// the was proposed for insertion.
 //			sql.ResolveWithNewValues(),
 //		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.OutpatientUpsert) {
+//			SetPatientID(v+v).
+//		}).
 //		Exec(ctx)
 func (ocb *OutpatientCreateBulk) OnConflict(opts ...sql.ConflictOption) *OutpatientUpsertBulk {
 	ocb.conflict = opts
@@ -332,10 +488,20 @@ type OutpatientUpsertBulk struct {
 //	client.Outpatient.Create().
 //		OnConflict(
 //			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(outpatient.FieldID)
+//			}),
 //		).
 //		Exec(ctx)
 func (u *OutpatientUpsertBulk) UpdateNewValues() *OutpatientUpsertBulk {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(outpatient.FieldID)
+			}
+		}
+	}))
 	return u
 }
 
@@ -364,6 +530,34 @@ func (u *OutpatientUpsertBulk) Update(set func(*OutpatientUpsert)) *OutpatientUp
 		set(&OutpatientUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetPatientID sets the "patient_id" field.
+func (u *OutpatientUpsertBulk) SetPatientID(v uuid.UUID) *OutpatientUpsertBulk {
+	return u.Update(func(s *OutpatientUpsert) {
+		s.SetPatientID(v)
+	})
+}
+
+// UpdatePatientID sets the "patient_id" field to the value that was provided on create.
+func (u *OutpatientUpsertBulk) UpdatePatientID() *OutpatientUpsertBulk {
+	return u.Update(func(s *OutpatientUpsert) {
+		s.UpdatePatientID()
+	})
+}
+
+// SetRegisterDate sets the "register_date" field.
+func (u *OutpatientUpsertBulk) SetRegisterDate(v time.Time) *OutpatientUpsertBulk {
+	return u.Update(func(s *OutpatientUpsert) {
+		s.SetRegisterDate(v)
+	})
+}
+
+// UpdateRegisterDate sets the "register_date" field to the value that was provided on create.
+func (u *OutpatientUpsertBulk) UpdateRegisterDate() *OutpatientUpsertBulk {
+	return u.Update(func(s *OutpatientUpsert) {
+		s.UpdateRegisterDate()
+	})
 }
 
 // Exec executes the query.

@@ -6,6 +6,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"patient/ent/inpatient"
+	"patient/ent/outpatient"
 	"patient/ent/patient"
 	"time"
 
@@ -60,6 +62,20 @@ func (pc *PatientCreate) SetDateOfBirth(t time.Time) *PatientCreate {
 	return pc
 }
 
+// SetCurrentPatientType sets the "current_patient_type" field.
+func (pc *PatientCreate) SetCurrentPatientType(i int32) *PatientCreate {
+	pc.mutation.SetCurrentPatientType(i)
+	return pc
+}
+
+// SetNillableCurrentPatientType sets the "current_patient_type" field if the given value is not nil.
+func (pc *PatientCreate) SetNillableCurrentPatientType(i *int32) *PatientCreate {
+	if i != nil {
+		pc.SetCurrentPatientType(*i)
+	}
+	return pc
+}
+
 // SetID sets the "id" field.
 func (pc *PatientCreate) SetID(u uuid.UUID) *PatientCreate {
 	pc.mutation.SetID(u)
@@ -72,6 +88,36 @@ func (pc *PatientCreate) SetNillableID(u *uuid.UUID) *PatientCreate {
 		pc.SetID(*u)
 	}
 	return pc
+}
+
+// AddInpatientIDs adds the "inpatients" edge to the Inpatient entity by IDs.
+func (pc *PatientCreate) AddInpatientIDs(ids ...uuid.UUID) *PatientCreate {
+	pc.mutation.AddInpatientIDs(ids...)
+	return pc
+}
+
+// AddInpatients adds the "inpatients" edges to the Inpatient entity.
+func (pc *PatientCreate) AddInpatients(i ...*Inpatient) *PatientCreate {
+	ids := make([]uuid.UUID, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return pc.AddInpatientIDs(ids...)
+}
+
+// AddOutpatientIDs adds the "outpatients" edge to the Outpatient entity by IDs.
+func (pc *PatientCreate) AddOutpatientIDs(ids ...uuid.UUID) *PatientCreate {
+	pc.mutation.AddOutpatientIDs(ids...)
+	return pc
+}
+
+// AddOutpatients adds the "outpatients" edges to the Outpatient entity.
+func (pc *PatientCreate) AddOutpatients(o ...*Outpatient) *PatientCreate {
+	ids := make([]uuid.UUID, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return pc.AddOutpatientIDs(ids...)
 }
 
 // Mutation returns the PatientMutation object of the builder.
@@ -109,6 +155,10 @@ func (pc *PatientCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (pc *PatientCreate) defaults() {
+	if _, ok := pc.mutation.CurrentPatientType(); !ok {
+		v := patient.DefaultCurrentPatientType
+		pc.mutation.SetCurrentPatientType(v)
+	}
 	if _, ok := pc.mutation.ID(); !ok {
 		v := patient.DefaultID()
 		pc.mutation.SetID(v)
@@ -139,6 +189,9 @@ func (pc *PatientCreate) check() error {
 	}
 	if _, ok := pc.mutation.DateOfBirth(); !ok {
 		return &ValidationError{Name: "date_of_birth", err: errors.New(`ent: missing required field "Patient.date_of_birth"`)}
+	}
+	if _, ok := pc.mutation.CurrentPatientType(); !ok {
+		return &ValidationError{Name: "current_patient_type", err: errors.New(`ent: missing required field "Patient.current_patient_type"`)}
 	}
 	return nil
 }
@@ -199,6 +252,42 @@ func (pc *PatientCreate) createSpec() (*Patient, *sqlgraph.CreateSpec) {
 	if value, ok := pc.mutation.DateOfBirth(); ok {
 		_spec.SetField(patient.FieldDateOfBirth, field.TypeTime, value)
 		_node.DateOfBirth = value
+	}
+	if value, ok := pc.mutation.CurrentPatientType(); ok {
+		_spec.SetField(patient.FieldCurrentPatientType, field.TypeInt32, value)
+		_node.CurrentPatientType = value
+	}
+	if nodes := pc.mutation.InpatientsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   patient.InpatientsTable,
+			Columns: []string{patient.InpatientsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(inpatient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.OutpatientsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   patient.OutpatientsTable,
+			Columns: []string{patient.OutpatientsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(outpatient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }
@@ -327,6 +416,24 @@ func (u *PatientUpsert) SetDateOfBirth(v time.Time) *PatientUpsert {
 // UpdateDateOfBirth sets the "date_of_birth" field to the value that was provided on create.
 func (u *PatientUpsert) UpdateDateOfBirth() *PatientUpsert {
 	u.SetExcluded(patient.FieldDateOfBirth)
+	return u
+}
+
+// SetCurrentPatientType sets the "current_patient_type" field.
+func (u *PatientUpsert) SetCurrentPatientType(v int32) *PatientUpsert {
+	u.Set(patient.FieldCurrentPatientType, v)
+	return u
+}
+
+// UpdateCurrentPatientType sets the "current_patient_type" field to the value that was provided on create.
+func (u *PatientUpsert) UpdateCurrentPatientType() *PatientUpsert {
+	u.SetExcluded(patient.FieldCurrentPatientType)
+	return u
+}
+
+// AddCurrentPatientType adds v to the "current_patient_type" field.
+func (u *PatientUpsert) AddCurrentPatientType(v int32) *PatientUpsert {
+	u.Add(patient.FieldCurrentPatientType, v)
 	return u
 }
 
@@ -466,6 +573,27 @@ func (u *PatientUpsertOne) SetDateOfBirth(v time.Time) *PatientUpsertOne {
 func (u *PatientUpsertOne) UpdateDateOfBirth() *PatientUpsertOne {
 	return u.Update(func(s *PatientUpsert) {
 		s.UpdateDateOfBirth()
+	})
+}
+
+// SetCurrentPatientType sets the "current_patient_type" field.
+func (u *PatientUpsertOne) SetCurrentPatientType(v int32) *PatientUpsertOne {
+	return u.Update(func(s *PatientUpsert) {
+		s.SetCurrentPatientType(v)
+	})
+}
+
+// AddCurrentPatientType adds v to the "current_patient_type" field.
+func (u *PatientUpsertOne) AddCurrentPatientType(v int32) *PatientUpsertOne {
+	return u.Update(func(s *PatientUpsert) {
+		s.AddCurrentPatientType(v)
+	})
+}
+
+// UpdateCurrentPatientType sets the "current_patient_type" field to the value that was provided on create.
+func (u *PatientUpsertOne) UpdateCurrentPatientType() *PatientUpsertOne {
+	return u.Update(func(s *PatientUpsert) {
+		s.UpdateCurrentPatientType()
 	})
 }
 
@@ -772,6 +900,27 @@ func (u *PatientUpsertBulk) SetDateOfBirth(v time.Time) *PatientUpsertBulk {
 func (u *PatientUpsertBulk) UpdateDateOfBirth() *PatientUpsertBulk {
 	return u.Update(func(s *PatientUpsert) {
 		s.UpdateDateOfBirth()
+	})
+}
+
+// SetCurrentPatientType sets the "current_patient_type" field.
+func (u *PatientUpsertBulk) SetCurrentPatientType(v int32) *PatientUpsertBulk {
+	return u.Update(func(s *PatientUpsert) {
+		s.SetCurrentPatientType(v)
+	})
+}
+
+// AddCurrentPatientType adds v to the "current_patient_type" field.
+func (u *PatientUpsertBulk) AddCurrentPatientType(v int32) *PatientUpsertBulk {
+	return u.Update(func(s *PatientUpsert) {
+		s.AddCurrentPatientType(v)
+	})
+}
+
+// UpdateCurrentPatientType sets the "current_patient_type" field to the value that was provided on create.
+func (u *PatientUpsertBulk) UpdateCurrentPatientType() *PatientUpsertBulk {
+	return u.Update(func(s *PatientUpsert) {
+		s.UpdateCurrentPatientType()
 	})
 }
 

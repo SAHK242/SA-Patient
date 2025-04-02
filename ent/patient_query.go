@@ -4,8 +4,11 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
+	"patient/ent/inpatient"
+	"patient/ent/outpatient"
 	"patient/ent/patient"
 	"patient/ent/predicate"
 
@@ -19,10 +22,12 @@ import (
 // PatientQuery is the builder for querying Patient entities.
 type PatientQuery struct {
 	config
-	ctx        *QueryContext
-	order      []patient.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Patient
+	ctx             *QueryContext
+	order           []patient.OrderOption
+	inters          []Interceptor
+	predicates      []predicate.Patient
+	withInpatients  *InpatientQuery
+	withOutpatients *OutpatientQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -57,6 +62,50 @@ func (pq *PatientQuery) Unique(unique bool) *PatientQuery {
 func (pq *PatientQuery) Order(o ...patient.OrderOption) *PatientQuery {
 	pq.order = append(pq.order, o...)
 	return pq
+}
+
+// QueryInpatients chains the current query on the "inpatients" edge.
+func (pq *PatientQuery) QueryInpatients() *InpatientQuery {
+	query := (&InpatientClient{config: pq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(patient.Table, patient.FieldID, selector),
+			sqlgraph.To(inpatient.Table, inpatient.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, patient.InpatientsTable, patient.InpatientsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOutpatients chains the current query on the "outpatients" edge.
+func (pq *PatientQuery) QueryOutpatients() *OutpatientQuery {
+	query := (&OutpatientClient{config: pq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(patient.Table, patient.FieldID, selector),
+			sqlgraph.To(outpatient.Table, outpatient.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, patient.OutpatientsTable, patient.OutpatientsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Patient entity from the query.
@@ -246,15 +295,39 @@ func (pq *PatientQuery) Clone() *PatientQuery {
 		return nil
 	}
 	return &PatientQuery{
-		config:     pq.config,
-		ctx:        pq.ctx.Clone(),
-		order:      append([]patient.OrderOption{}, pq.order...),
-		inters:     append([]Interceptor{}, pq.inters...),
-		predicates: append([]predicate.Patient{}, pq.predicates...),
+		config:          pq.config,
+		ctx:             pq.ctx.Clone(),
+		order:           append([]patient.OrderOption{}, pq.order...),
+		inters:          append([]Interceptor{}, pq.inters...),
+		predicates:      append([]predicate.Patient{}, pq.predicates...),
+		withInpatients:  pq.withInpatients.Clone(),
+		withOutpatients: pq.withOutpatients.Clone(),
 		// clone intermediate query.
 		sql:  pq.sql.Clone(),
 		path: pq.path,
 	}
+}
+
+// WithInpatients tells the query-builder to eager-load the nodes that are connected to
+// the "inpatients" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *PatientQuery) WithInpatients(opts ...func(*InpatientQuery)) *PatientQuery {
+	query := (&InpatientClient{config: pq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withInpatients = query
+	return pq
+}
+
+// WithOutpatients tells the query-builder to eager-load the nodes that are connected to
+// the "outpatients" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *PatientQuery) WithOutpatients(opts ...func(*OutpatientQuery)) *PatientQuery {
+	query := (&OutpatientClient{config: pq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withOutpatients = query
+	return pq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -333,8 +406,12 @@ func (pq *PatientQuery) prepareQuery(ctx context.Context) error {
 
 func (pq *PatientQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Patient, error) {
 	var (
-		nodes = []*Patient{}
-		_spec = pq.querySpec()
+		nodes       = []*Patient{}
+		_spec       = pq.querySpec()
+		loadedTypes = [2]bool{
+			pq.withInpatients != nil,
+			pq.withOutpatients != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Patient).scanValues(nil, columns)
@@ -342,6 +419,7 @@ func (pq *PatientQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Pati
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Patient{config: pq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	for i := range hooks {
@@ -353,7 +431,82 @@ func (pq *PatientQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Pati
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := pq.withInpatients; query != nil {
+		if err := pq.loadInpatients(ctx, query, nodes,
+			func(n *Patient) { n.Edges.Inpatients = []*Inpatient{} },
+			func(n *Patient, e *Inpatient) { n.Edges.Inpatients = append(n.Edges.Inpatients, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := pq.withOutpatients; query != nil {
+		if err := pq.loadOutpatients(ctx, query, nodes,
+			func(n *Patient) { n.Edges.Outpatients = []*Outpatient{} },
+			func(n *Patient, e *Outpatient) { n.Edges.Outpatients = append(n.Edges.Outpatients, e) }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
+}
+
+func (pq *PatientQuery) loadInpatients(ctx context.Context, query *InpatientQuery, nodes []*Patient, init func(*Patient), assign func(*Patient, *Inpatient)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Patient)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(inpatient.FieldPatientID)
+	}
+	query.Where(predicate.Inpatient(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(patient.InpatientsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.PatientID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "patient_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (pq *PatientQuery) loadOutpatients(ctx context.Context, query *OutpatientQuery, nodes []*Patient, init func(*Patient), assign func(*Patient, *Outpatient)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Patient)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(outpatient.FieldPatientID)
+	}
+	query.Where(predicate.Outpatient(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(patient.OutpatientsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.PatientID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "patient_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
 }
 
 func (pq *PatientQuery) sqlCount(ctx context.Context) (int, error) {

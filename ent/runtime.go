@@ -3,6 +3,8 @@
 package ent
 
 import (
+	"patient/ent/inpatient"
+	"patient/ent/outpatient"
 	"patient/ent/patient"
 	"patient/ent/schema"
 
@@ -13,12 +15,28 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	inpatientFields := schema.Inpatient{}.Fields()
+	_ = inpatientFields
+	// inpatientDescID is the schema descriptor for id field.
+	inpatientDescID := inpatientFields[0].Descriptor()
+	// inpatient.DefaultID holds the default value on creation for the id field.
+	inpatient.DefaultID = inpatientDescID.Default.(func() uuid.UUID)
+	outpatientFields := schema.Outpatient{}.Fields()
+	_ = outpatientFields
+	// outpatientDescID is the schema descriptor for id field.
+	outpatientDescID := outpatientFields[0].Descriptor()
+	// outpatient.DefaultID holds the default value on creation for the id field.
+	outpatient.DefaultID = outpatientDescID.Default.(func() uuid.UUID)
 	patientFields := schema.Patient{}.Fields()
 	_ = patientFields
 	// patientDescGender is the schema descriptor for gender field.
 	patientDescGender := patientFields[4].Descriptor()
 	// patient.GenderValidator is a validator for the "gender" field. It is called by the builders before save.
 	patient.GenderValidator = patientDescGender.Validators[0].(func(int32) error)
+	// patientDescCurrentPatientType is the schema descriptor for current_patient_type field.
+	patientDescCurrentPatientType := patientFields[7].Descriptor()
+	// patient.DefaultCurrentPatientType holds the default value on creation for the current_patient_type field.
+	patient.DefaultCurrentPatientType = patientDescCurrentPatientType.Default.(int32)
 	// patientDescID is the schema descriptor for id field.
 	patientDescID := patientFields[0].Descriptor()
 	// patient.DefaultID holds the default value on creation for the id field.

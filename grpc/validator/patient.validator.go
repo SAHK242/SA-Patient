@@ -40,6 +40,10 @@ func (v *patientGrpcValidator) ValidateUpsertPatientRequest(ctx context.Context,
 		return status.Error(codes.InvalidArgument, "phone number is required")
 	}
 
+	if req.PatientType != gcommon.PatientType_PATIENT_TYPE_UNSPECIFIED && req.PatientType != gcommon.PatientType_PATIENT_TYPE_INPATIENT && req.PatientType != gcommon.PatientType_PATIENT_TYPE_OUTPATIENT {
+		return status.Error(codes.InvalidArgument, "patient type is invalid")
+	}
+
 	return nil
 }
 

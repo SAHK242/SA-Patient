@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	gcommon "patient/proto/gcommon"
 )
 
 // Patient holds the schema definition for the Patient entity.
@@ -22,12 +23,16 @@ func (Patient) Fields() []ent.Field {
 		field.Int32("gender").Positive(),
 		field.String("address"),
 		field.Time("date_of_birth"),
+		field.Int32("current_patient_type").Default(int32(gcommon.PatientType_PATIENT_TYPE_OUTPATIENT)),
 	}
 }
 
 // Edges of the Patient.
 func (Patient) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		hasMany("inpatients", Inpatient.Type),
+		hasMany("outpatients", Outpatient.Type),
+	}
 }
 
 func (Patient) Annotations() []schema.Annotation {

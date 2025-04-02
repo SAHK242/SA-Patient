@@ -27,6 +27,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
 )
 
@@ -625,7 +626,7 @@ func (c *InpatientClient) UpdateOne(i *Inpatient) *InpatientUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *InpatientClient) UpdateOneID(id int) *InpatientUpdateOne {
+func (c *InpatientClient) UpdateOneID(id uuid.UUID) *InpatientUpdateOne {
 	mutation := newInpatientMutation(c.config, OpUpdateOne, withInpatientID(id))
 	return &InpatientUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -642,7 +643,7 @@ func (c *InpatientClient) DeleteOne(i *Inpatient) *InpatientDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *InpatientClient) DeleteOneID(id int) *InpatientDeleteOne {
+func (c *InpatientClient) DeleteOneID(id uuid.UUID) *InpatientDeleteOne {
 	builder := c.Delete().Where(inpatient.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -659,17 +660,33 @@ func (c *InpatientClient) Query() *InpatientQuery {
 }
 
 // Get returns a Inpatient entity by its id.
-func (c *InpatientClient) Get(ctx context.Context, id int) (*Inpatient, error) {
+func (c *InpatientClient) Get(ctx context.Context, id uuid.UUID) (*Inpatient, error) {
 	return c.Query().Where(inpatient.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *InpatientClient) GetX(ctx context.Context, id int) *Inpatient {
+func (c *InpatientClient) GetX(ctx context.Context, id uuid.UUID) *Inpatient {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryPatient queries the patient edge of a Inpatient.
+func (c *InpatientClient) QueryPatient(i *Inpatient) *PatientQuery {
+	query := (&PatientClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := i.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(inpatient.Table, inpatient.FieldID, id),
+			sqlgraph.To(patient.Table, patient.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, inpatient.PatientTable, inpatient.PatientColumn),
+		)
+		fromV = sqlgraph.Neighbors(i.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.
@@ -1290,7 +1307,7 @@ func (c *OutpatientClient) UpdateOne(o *Outpatient) *OutpatientUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *OutpatientClient) UpdateOneID(id int) *OutpatientUpdateOne {
+func (c *OutpatientClient) UpdateOneID(id uuid.UUID) *OutpatientUpdateOne {
 	mutation := newOutpatientMutation(c.config, OpUpdateOne, withOutpatientID(id))
 	return &OutpatientUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -1307,7 +1324,7 @@ func (c *OutpatientClient) DeleteOne(o *Outpatient) *OutpatientDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *OutpatientClient) DeleteOneID(id int) *OutpatientDeleteOne {
+func (c *OutpatientClient) DeleteOneID(id uuid.UUID) *OutpatientDeleteOne {
 	builder := c.Delete().Where(outpatient.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -1324,17 +1341,33 @@ func (c *OutpatientClient) Query() *OutpatientQuery {
 }
 
 // Get returns a Outpatient entity by its id.
-func (c *OutpatientClient) Get(ctx context.Context, id int) (*Outpatient, error) {
+func (c *OutpatientClient) Get(ctx context.Context, id uuid.UUID) (*Outpatient, error) {
 	return c.Query().Where(outpatient.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *OutpatientClient) GetX(ctx context.Context, id int) *Outpatient {
+func (c *OutpatientClient) GetX(ctx context.Context, id uuid.UUID) *Outpatient {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryPatient queries the patient edge of a Outpatient.
+func (c *OutpatientClient) QueryPatient(o *Outpatient) *PatientQuery {
+	query := (&PatientClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := o.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(outpatient.Table, outpatient.FieldID, id),
+			sqlgraph.To(patient.Table, patient.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, outpatient.PatientTable, outpatient.PatientColumn),
+		)
+		fromV = sqlgraph.Neighbors(o.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.
@@ -1601,6 +1634,38 @@ func (c *PatientClient) GetX(ctx context.Context, id uuid.UUID) *Patient {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryInpatients queries the inpatients edge of a Patient.
+func (c *PatientClient) QueryInpatients(pa *Patient) *InpatientQuery {
+	query := (&InpatientClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pa.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(patient.Table, patient.FieldID, id),
+			sqlgraph.To(inpatient.Table, inpatient.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, patient.InpatientsTable, patient.InpatientsColumn),
+		)
+		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOutpatients queries the outpatients edge of a Patient.
+func (c *PatientClient) QueryOutpatients(pa *Patient) *OutpatientQuery {
+	query := (&OutpatientClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pa.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(patient.Table, patient.FieldID, id),
+			sqlgraph.To(outpatient.Table, outpatient.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, patient.OutpatientsTable, patient.OutpatientsColumn),
+		)
+		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.

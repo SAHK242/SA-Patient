@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
 )
 
@@ -83,6 +84,11 @@ func Address(v string) predicate.Patient {
 // DateOfBirth applies equality check predicate on the "date_of_birth" field. It's identical to DateOfBirthEQ.
 func DateOfBirth(v time.Time) predicate.Patient {
 	return predicate.Patient(sql.FieldEQ(FieldDateOfBirth, v))
+}
+
+// CurrentPatientType applies equality check predicate on the "current_patient_type" field. It's identical to CurrentPatientTypeEQ.
+func CurrentPatientType(v int32) predicate.Patient {
+	return predicate.Patient(sql.FieldEQ(FieldCurrentPatientType, v))
 }
 
 // PhoneNumberEQ applies the EQ predicate on the "phone_number" field.
@@ -423,6 +429,92 @@ func DateOfBirthLT(v time.Time) predicate.Patient {
 // DateOfBirthLTE applies the LTE predicate on the "date_of_birth" field.
 func DateOfBirthLTE(v time.Time) predicate.Patient {
 	return predicate.Patient(sql.FieldLTE(FieldDateOfBirth, v))
+}
+
+// CurrentPatientTypeEQ applies the EQ predicate on the "current_patient_type" field.
+func CurrentPatientTypeEQ(v int32) predicate.Patient {
+	return predicate.Patient(sql.FieldEQ(FieldCurrentPatientType, v))
+}
+
+// CurrentPatientTypeNEQ applies the NEQ predicate on the "current_patient_type" field.
+func CurrentPatientTypeNEQ(v int32) predicate.Patient {
+	return predicate.Patient(sql.FieldNEQ(FieldCurrentPatientType, v))
+}
+
+// CurrentPatientTypeIn applies the In predicate on the "current_patient_type" field.
+func CurrentPatientTypeIn(vs ...int32) predicate.Patient {
+	return predicate.Patient(sql.FieldIn(FieldCurrentPatientType, vs...))
+}
+
+// CurrentPatientTypeNotIn applies the NotIn predicate on the "current_patient_type" field.
+func CurrentPatientTypeNotIn(vs ...int32) predicate.Patient {
+	return predicate.Patient(sql.FieldNotIn(FieldCurrentPatientType, vs...))
+}
+
+// CurrentPatientTypeGT applies the GT predicate on the "current_patient_type" field.
+func CurrentPatientTypeGT(v int32) predicate.Patient {
+	return predicate.Patient(sql.FieldGT(FieldCurrentPatientType, v))
+}
+
+// CurrentPatientTypeGTE applies the GTE predicate on the "current_patient_type" field.
+func CurrentPatientTypeGTE(v int32) predicate.Patient {
+	return predicate.Patient(sql.FieldGTE(FieldCurrentPatientType, v))
+}
+
+// CurrentPatientTypeLT applies the LT predicate on the "current_patient_type" field.
+func CurrentPatientTypeLT(v int32) predicate.Patient {
+	return predicate.Patient(sql.FieldLT(FieldCurrentPatientType, v))
+}
+
+// CurrentPatientTypeLTE applies the LTE predicate on the "current_patient_type" field.
+func CurrentPatientTypeLTE(v int32) predicate.Patient {
+	return predicate.Patient(sql.FieldLTE(FieldCurrentPatientType, v))
+}
+
+// HasInpatients applies the HasEdge predicate on the "inpatients" edge.
+func HasInpatients() predicate.Patient {
+	return predicate.Patient(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, InpatientsTable, InpatientsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasInpatientsWith applies the HasEdge predicate on the "inpatients" edge with a given conditions (other predicates).
+func HasInpatientsWith(preds ...predicate.Inpatient) predicate.Patient {
+	return predicate.Patient(func(s *sql.Selector) {
+		step := newInpatientsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasOutpatients applies the HasEdge predicate on the "outpatients" edge.
+func HasOutpatients() predicate.Patient {
+	return predicate.Patient(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, OutpatientsTable, OutpatientsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOutpatientsWith applies the HasEdge predicate on the "outpatients" edge with a given conditions (other predicates).
+func HasOutpatientsWith(preds ...predicate.Outpatient) predicate.Patient {
+	return predicate.Patient(func(s *sql.Selector) {
+		step := newOutpatientsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

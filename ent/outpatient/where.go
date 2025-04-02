@@ -4,53 +4,149 @@ package outpatient
 
 import (
 	"patient/ent/predicate"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/google/uuid"
 )
 
 // ID filters vertices based on their ID field.
-func ID(id int) predicate.Outpatient {
+func ID(id uuid.UUID) predicate.Outpatient {
 	return predicate.Outpatient(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id int) predicate.Outpatient {
+func IDEQ(id uuid.UUID) predicate.Outpatient {
 	return predicate.Outpatient(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id int) predicate.Outpatient {
+func IDNEQ(id uuid.UUID) predicate.Outpatient {
 	return predicate.Outpatient(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
-func IDIn(ids ...int) predicate.Outpatient {
+func IDIn(ids ...uuid.UUID) predicate.Outpatient {
 	return predicate.Outpatient(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...int) predicate.Outpatient {
+func IDNotIn(ids ...uuid.UUID) predicate.Outpatient {
 	return predicate.Outpatient(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
-func IDGT(id int) predicate.Outpatient {
+func IDGT(id uuid.UUID) predicate.Outpatient {
 	return predicate.Outpatient(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id int) predicate.Outpatient {
+func IDGTE(id uuid.UUID) predicate.Outpatient {
 	return predicate.Outpatient(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
-func IDLT(id int) predicate.Outpatient {
+func IDLT(id uuid.UUID) predicate.Outpatient {
 	return predicate.Outpatient(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id int) predicate.Outpatient {
+func IDLTE(id uuid.UUID) predicate.Outpatient {
 	return predicate.Outpatient(sql.FieldLTE(FieldID, id))
+}
+
+// PatientID applies equality check predicate on the "patient_id" field. It's identical to PatientIDEQ.
+func PatientID(v uuid.UUID) predicate.Outpatient {
+	return predicate.Outpatient(sql.FieldEQ(FieldPatientID, v))
+}
+
+// RegisterDate applies equality check predicate on the "register_date" field. It's identical to RegisterDateEQ.
+func RegisterDate(v time.Time) predicate.Outpatient {
+	return predicate.Outpatient(sql.FieldEQ(FieldRegisterDate, v))
+}
+
+// PatientIDEQ applies the EQ predicate on the "patient_id" field.
+func PatientIDEQ(v uuid.UUID) predicate.Outpatient {
+	return predicate.Outpatient(sql.FieldEQ(FieldPatientID, v))
+}
+
+// PatientIDNEQ applies the NEQ predicate on the "patient_id" field.
+func PatientIDNEQ(v uuid.UUID) predicate.Outpatient {
+	return predicate.Outpatient(sql.FieldNEQ(FieldPatientID, v))
+}
+
+// PatientIDIn applies the In predicate on the "patient_id" field.
+func PatientIDIn(vs ...uuid.UUID) predicate.Outpatient {
+	return predicate.Outpatient(sql.FieldIn(FieldPatientID, vs...))
+}
+
+// PatientIDNotIn applies the NotIn predicate on the "patient_id" field.
+func PatientIDNotIn(vs ...uuid.UUID) predicate.Outpatient {
+	return predicate.Outpatient(sql.FieldNotIn(FieldPatientID, vs...))
+}
+
+// RegisterDateEQ applies the EQ predicate on the "register_date" field.
+func RegisterDateEQ(v time.Time) predicate.Outpatient {
+	return predicate.Outpatient(sql.FieldEQ(FieldRegisterDate, v))
+}
+
+// RegisterDateNEQ applies the NEQ predicate on the "register_date" field.
+func RegisterDateNEQ(v time.Time) predicate.Outpatient {
+	return predicate.Outpatient(sql.FieldNEQ(FieldRegisterDate, v))
+}
+
+// RegisterDateIn applies the In predicate on the "register_date" field.
+func RegisterDateIn(vs ...time.Time) predicate.Outpatient {
+	return predicate.Outpatient(sql.FieldIn(FieldRegisterDate, vs...))
+}
+
+// RegisterDateNotIn applies the NotIn predicate on the "register_date" field.
+func RegisterDateNotIn(vs ...time.Time) predicate.Outpatient {
+	return predicate.Outpatient(sql.FieldNotIn(FieldRegisterDate, vs...))
+}
+
+// RegisterDateGT applies the GT predicate on the "register_date" field.
+func RegisterDateGT(v time.Time) predicate.Outpatient {
+	return predicate.Outpatient(sql.FieldGT(FieldRegisterDate, v))
+}
+
+// RegisterDateGTE applies the GTE predicate on the "register_date" field.
+func RegisterDateGTE(v time.Time) predicate.Outpatient {
+	return predicate.Outpatient(sql.FieldGTE(FieldRegisterDate, v))
+}
+
+// RegisterDateLT applies the LT predicate on the "register_date" field.
+func RegisterDateLT(v time.Time) predicate.Outpatient {
+	return predicate.Outpatient(sql.FieldLT(FieldRegisterDate, v))
+}
+
+// RegisterDateLTE applies the LTE predicate on the "register_date" field.
+func RegisterDateLTE(v time.Time) predicate.Outpatient {
+	return predicate.Outpatient(sql.FieldLTE(FieldRegisterDate, v))
+}
+
+// HasPatient applies the HasEdge predicate on the "patient" edge.
+func HasPatient() predicate.Outpatient {
+	return predicate.Outpatient(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, PatientTable, PatientColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasPatientWith applies the HasEdge predicate on the "patient" edge with a given conditions (other predicates).
+func HasPatientWith(preds ...predicate.Patient) predicate.Outpatient {
+	return predicate.Outpatient(func(s *sql.Selector) {
+		step := newPatientStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

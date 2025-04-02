@@ -6,6 +6,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"patient/ent/inpatient"
+	"patient/ent/outpatient"
 	"patient/ent/patient"
 	"patient/ent/predicate"
 	"time"
@@ -13,6 +15,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // PatientUpdate is the builder for updating Patient entities.
@@ -119,9 +122,102 @@ func (pu *PatientUpdate) SetNillableDateOfBirth(t *time.Time) *PatientUpdate {
 	return pu
 }
 
+// SetCurrentPatientType sets the "current_patient_type" field.
+func (pu *PatientUpdate) SetCurrentPatientType(i int32) *PatientUpdate {
+	pu.mutation.ResetCurrentPatientType()
+	pu.mutation.SetCurrentPatientType(i)
+	return pu
+}
+
+// SetNillableCurrentPatientType sets the "current_patient_type" field if the given value is not nil.
+func (pu *PatientUpdate) SetNillableCurrentPatientType(i *int32) *PatientUpdate {
+	if i != nil {
+		pu.SetCurrentPatientType(*i)
+	}
+	return pu
+}
+
+// AddCurrentPatientType adds i to the "current_patient_type" field.
+func (pu *PatientUpdate) AddCurrentPatientType(i int32) *PatientUpdate {
+	pu.mutation.AddCurrentPatientType(i)
+	return pu
+}
+
+// AddInpatientIDs adds the "inpatients" edge to the Inpatient entity by IDs.
+func (pu *PatientUpdate) AddInpatientIDs(ids ...uuid.UUID) *PatientUpdate {
+	pu.mutation.AddInpatientIDs(ids...)
+	return pu
+}
+
+// AddInpatients adds the "inpatients" edges to the Inpatient entity.
+func (pu *PatientUpdate) AddInpatients(i ...*Inpatient) *PatientUpdate {
+	ids := make([]uuid.UUID, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return pu.AddInpatientIDs(ids...)
+}
+
+// AddOutpatientIDs adds the "outpatients" edge to the Outpatient entity by IDs.
+func (pu *PatientUpdate) AddOutpatientIDs(ids ...uuid.UUID) *PatientUpdate {
+	pu.mutation.AddOutpatientIDs(ids...)
+	return pu
+}
+
+// AddOutpatients adds the "outpatients" edges to the Outpatient entity.
+func (pu *PatientUpdate) AddOutpatients(o ...*Outpatient) *PatientUpdate {
+	ids := make([]uuid.UUID, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return pu.AddOutpatientIDs(ids...)
+}
+
 // Mutation returns the PatientMutation object of the builder.
 func (pu *PatientUpdate) Mutation() *PatientMutation {
 	return pu.mutation
+}
+
+// ClearInpatients clears all "inpatients" edges to the Inpatient entity.
+func (pu *PatientUpdate) ClearInpatients() *PatientUpdate {
+	pu.mutation.ClearInpatients()
+	return pu
+}
+
+// RemoveInpatientIDs removes the "inpatients" edge to Inpatient entities by IDs.
+func (pu *PatientUpdate) RemoveInpatientIDs(ids ...uuid.UUID) *PatientUpdate {
+	pu.mutation.RemoveInpatientIDs(ids...)
+	return pu
+}
+
+// RemoveInpatients removes "inpatients" edges to Inpatient entities.
+func (pu *PatientUpdate) RemoveInpatients(i ...*Inpatient) *PatientUpdate {
+	ids := make([]uuid.UUID, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return pu.RemoveInpatientIDs(ids...)
+}
+
+// ClearOutpatients clears all "outpatients" edges to the Outpatient entity.
+func (pu *PatientUpdate) ClearOutpatients() *PatientUpdate {
+	pu.mutation.ClearOutpatients()
+	return pu
+}
+
+// RemoveOutpatientIDs removes the "outpatients" edge to Outpatient entities by IDs.
+func (pu *PatientUpdate) RemoveOutpatientIDs(ids ...uuid.UUID) *PatientUpdate {
+	pu.mutation.RemoveOutpatientIDs(ids...)
+	return pu
+}
+
+// RemoveOutpatients removes "outpatients" edges to Outpatient entities.
+func (pu *PatientUpdate) RemoveOutpatients(o ...*Outpatient) *PatientUpdate {
+	ids := make([]uuid.UUID, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return pu.RemoveOutpatientIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -193,6 +289,102 @@ func (pu *PatientUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := pu.mutation.DateOfBirth(); ok {
 		_spec.SetField(patient.FieldDateOfBirth, field.TypeTime, value)
+	}
+	if value, ok := pu.mutation.CurrentPatientType(); ok {
+		_spec.SetField(patient.FieldCurrentPatientType, field.TypeInt32, value)
+	}
+	if value, ok := pu.mutation.AddedCurrentPatientType(); ok {
+		_spec.AddField(patient.FieldCurrentPatientType, field.TypeInt32, value)
+	}
+	if pu.mutation.InpatientsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   patient.InpatientsTable,
+			Columns: []string{patient.InpatientsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(inpatient.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedInpatientsIDs(); len(nodes) > 0 && !pu.mutation.InpatientsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   patient.InpatientsTable,
+			Columns: []string{patient.InpatientsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(inpatient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.InpatientsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   patient.InpatientsTable,
+			Columns: []string{patient.InpatientsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(inpatient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if pu.mutation.OutpatientsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   patient.OutpatientsTable,
+			Columns: []string{patient.OutpatientsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(outpatient.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedOutpatientsIDs(); len(nodes) > 0 && !pu.mutation.OutpatientsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   patient.OutpatientsTable,
+			Columns: []string{patient.OutpatientsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(outpatient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.OutpatientsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   patient.OutpatientsTable,
+			Columns: []string{patient.OutpatientsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(outpatient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, pu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -305,9 +497,102 @@ func (puo *PatientUpdateOne) SetNillableDateOfBirth(t *time.Time) *PatientUpdate
 	return puo
 }
 
+// SetCurrentPatientType sets the "current_patient_type" field.
+func (puo *PatientUpdateOne) SetCurrentPatientType(i int32) *PatientUpdateOne {
+	puo.mutation.ResetCurrentPatientType()
+	puo.mutation.SetCurrentPatientType(i)
+	return puo
+}
+
+// SetNillableCurrentPatientType sets the "current_patient_type" field if the given value is not nil.
+func (puo *PatientUpdateOne) SetNillableCurrentPatientType(i *int32) *PatientUpdateOne {
+	if i != nil {
+		puo.SetCurrentPatientType(*i)
+	}
+	return puo
+}
+
+// AddCurrentPatientType adds i to the "current_patient_type" field.
+func (puo *PatientUpdateOne) AddCurrentPatientType(i int32) *PatientUpdateOne {
+	puo.mutation.AddCurrentPatientType(i)
+	return puo
+}
+
+// AddInpatientIDs adds the "inpatients" edge to the Inpatient entity by IDs.
+func (puo *PatientUpdateOne) AddInpatientIDs(ids ...uuid.UUID) *PatientUpdateOne {
+	puo.mutation.AddInpatientIDs(ids...)
+	return puo
+}
+
+// AddInpatients adds the "inpatients" edges to the Inpatient entity.
+func (puo *PatientUpdateOne) AddInpatients(i ...*Inpatient) *PatientUpdateOne {
+	ids := make([]uuid.UUID, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return puo.AddInpatientIDs(ids...)
+}
+
+// AddOutpatientIDs adds the "outpatients" edge to the Outpatient entity by IDs.
+func (puo *PatientUpdateOne) AddOutpatientIDs(ids ...uuid.UUID) *PatientUpdateOne {
+	puo.mutation.AddOutpatientIDs(ids...)
+	return puo
+}
+
+// AddOutpatients adds the "outpatients" edges to the Outpatient entity.
+func (puo *PatientUpdateOne) AddOutpatients(o ...*Outpatient) *PatientUpdateOne {
+	ids := make([]uuid.UUID, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return puo.AddOutpatientIDs(ids...)
+}
+
 // Mutation returns the PatientMutation object of the builder.
 func (puo *PatientUpdateOne) Mutation() *PatientMutation {
 	return puo.mutation
+}
+
+// ClearInpatients clears all "inpatients" edges to the Inpatient entity.
+func (puo *PatientUpdateOne) ClearInpatients() *PatientUpdateOne {
+	puo.mutation.ClearInpatients()
+	return puo
+}
+
+// RemoveInpatientIDs removes the "inpatients" edge to Inpatient entities by IDs.
+func (puo *PatientUpdateOne) RemoveInpatientIDs(ids ...uuid.UUID) *PatientUpdateOne {
+	puo.mutation.RemoveInpatientIDs(ids...)
+	return puo
+}
+
+// RemoveInpatients removes "inpatients" edges to Inpatient entities.
+func (puo *PatientUpdateOne) RemoveInpatients(i ...*Inpatient) *PatientUpdateOne {
+	ids := make([]uuid.UUID, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return puo.RemoveInpatientIDs(ids...)
+}
+
+// ClearOutpatients clears all "outpatients" edges to the Outpatient entity.
+func (puo *PatientUpdateOne) ClearOutpatients() *PatientUpdateOne {
+	puo.mutation.ClearOutpatients()
+	return puo
+}
+
+// RemoveOutpatientIDs removes the "outpatients" edge to Outpatient entities by IDs.
+func (puo *PatientUpdateOne) RemoveOutpatientIDs(ids ...uuid.UUID) *PatientUpdateOne {
+	puo.mutation.RemoveOutpatientIDs(ids...)
+	return puo
+}
+
+// RemoveOutpatients removes "outpatients" edges to Outpatient entities.
+func (puo *PatientUpdateOne) RemoveOutpatients(o ...*Outpatient) *PatientUpdateOne {
+	ids := make([]uuid.UUID, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return puo.RemoveOutpatientIDs(ids...)
 }
 
 // Where appends a list predicates to the PatientUpdate builder.
@@ -409,6 +694,102 @@ func (puo *PatientUpdateOne) sqlSave(ctx context.Context) (_node *Patient, err e
 	}
 	if value, ok := puo.mutation.DateOfBirth(); ok {
 		_spec.SetField(patient.FieldDateOfBirth, field.TypeTime, value)
+	}
+	if value, ok := puo.mutation.CurrentPatientType(); ok {
+		_spec.SetField(patient.FieldCurrentPatientType, field.TypeInt32, value)
+	}
+	if value, ok := puo.mutation.AddedCurrentPatientType(); ok {
+		_spec.AddField(patient.FieldCurrentPatientType, field.TypeInt32, value)
+	}
+	if puo.mutation.InpatientsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   patient.InpatientsTable,
+			Columns: []string{patient.InpatientsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(inpatient.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedInpatientsIDs(); len(nodes) > 0 && !puo.mutation.InpatientsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   patient.InpatientsTable,
+			Columns: []string{patient.InpatientsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(inpatient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.InpatientsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   patient.InpatientsTable,
+			Columns: []string{patient.InpatientsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(inpatient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.OutpatientsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   patient.OutpatientsTable,
+			Columns: []string{patient.OutpatientsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(outpatient.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedOutpatientsIDs(); len(nodes) > 0 && !puo.mutation.OutpatientsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   patient.OutpatientsTable,
+			Columns: []string{patient.OutpatientsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(outpatient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.OutpatientsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   patient.OutpatientsTable,
+			Columns: []string{patient.OutpatientsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(outpatient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Patient{config: puo.config}
 	_spec.Assign = _node.assignValues

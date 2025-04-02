@@ -29,15 +29,25 @@ var (
 		Columns:    ExamineMedicationsColumns,
 		PrimaryKey: []*schema.Column{ExamineMedicationsColumns[0]},
 	}
-	// InpatientsColumns holds the columns for the "inpatients" table.
-	InpatientsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+	// InpatientColumns holds the columns for the "inpatient" table.
+	InpatientColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "register_date", Type: field.TypeTime},
+		{Name: "patient_id", Type: field.TypeUUID},
 	}
-	// InpatientsTable holds the schema information for the "inpatients" table.
-	InpatientsTable = &schema.Table{
-		Name:       "inpatients",
-		Columns:    InpatientsColumns,
-		PrimaryKey: []*schema.Column{InpatientsColumns[0]},
+	// InpatientTable holds the schema information for the "inpatient" table.
+	InpatientTable = &schema.Table{
+		Name:       "inpatient",
+		Columns:    InpatientColumns,
+		PrimaryKey: []*schema.Column{InpatientColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "inpatient_patient_inpatients",
+				Columns:    []*schema.Column{InpatientColumns[2]},
+				RefColumns: []*schema.Column{PatientColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 	}
 	// InpatientDetailsColumns holds the columns for the "inpatient_details" table.
 	InpatientDetailsColumns = []*schema.Column{
@@ -79,15 +89,25 @@ var (
 		Columns:    MedicationEffectsColumns,
 		PrimaryKey: []*schema.Column{MedicationEffectsColumns[0]},
 	}
-	// OutpatientsColumns holds the columns for the "outpatients" table.
-	OutpatientsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+	// OutpatientColumns holds the columns for the "outpatient" table.
+	OutpatientColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "register_date", Type: field.TypeTime},
+		{Name: "patient_id", Type: field.TypeUUID},
 	}
-	// OutpatientsTable holds the schema information for the "outpatients" table.
-	OutpatientsTable = &schema.Table{
-		Name:       "outpatients",
-		Columns:    OutpatientsColumns,
-		PrimaryKey: []*schema.Column{OutpatientsColumns[0]},
+	// OutpatientTable holds the schema information for the "outpatient" table.
+	OutpatientTable = &schema.Table{
+		Name:       "outpatient",
+		Columns:    OutpatientColumns,
+		PrimaryKey: []*schema.Column{OutpatientColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "outpatient_patient_outpatients",
+				Columns:    []*schema.Column{OutpatientColumns[2]},
+				RefColumns: []*schema.Column{PatientColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 	}
 	// OutpatientDetailsColumns holds the columns for the "outpatient_details" table.
 	OutpatientDetailsColumns = []*schema.Column{
@@ -108,6 +128,7 @@ var (
 		{Name: "gender", Type: field.TypeInt32},
 		{Name: "address", Type: field.TypeString},
 		{Name: "date_of_birth", Type: field.TypeTime},
+		{Name: "current_patient_type", Type: field.TypeInt32, Default: 2},
 	}
 	// PatientTable holds the schema information for the "patient" table.
 	PatientTable = &schema.Table{
@@ -139,12 +160,12 @@ var (
 	Tables = []*schema.Table{
 		ExamineDetailsTable,
 		ExamineMedicationsTable,
-		InpatientsTable,
+		InpatientTable,
 		InpatientDetailsTable,
 		InvoicesTable,
 		MedicationsTable,
 		MedicationEffectsTable,
-		OutpatientsTable,
+		OutpatientTable,
 		OutpatientDetailsTable,
 		PatientTable,
 		TreatDetailsTable,
@@ -153,6 +174,14 @@ var (
 )
 
 func init() {
+	InpatientTable.ForeignKeys[0].RefTable = PatientTable
+	InpatientTable.Annotation = &entsql.Annotation{
+		Table: "inpatient",
+	}
+	OutpatientTable.ForeignKeys[0].RefTable = PatientTable
+	OutpatientTable.Annotation = &entsql.Annotation{
+		Table: "outpatient",
+	}
 	PatientTable.Annotation = &entsql.Annotation{
 		Table: "patient",
 	}

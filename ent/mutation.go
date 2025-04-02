@@ -6,6 +6,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"patient/ent/inpatient"
+	"patient/ent/outpatient"
 	"patient/ent/patient"
 	"patient/ent/predicate"
 	"sync"
@@ -570,13 +572,16 @@ func (m *ExamineMedicationMutation) ResetEdge(name string) error {
 // InpatientMutation represents an operation that mutates the Inpatient nodes in the graph.
 type InpatientMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*Inpatient, error)
-	predicates    []predicate.Inpatient
+	op             Op
+	typ            string
+	id             *uuid.UUID
+	register_date  *time.Time
+	clearedFields  map[string]struct{}
+	patient        *uuid.UUID
+	clearedpatient bool
+	done           bool
+	oldValue       func(context.Context) (*Inpatient, error)
+	predicates     []predicate.Inpatient
 }
 
 var _ ent.Mutation = (*InpatientMutation)(nil)
@@ -599,7 +604,7 @@ func newInpatientMutation(c config, op Op, opts ...inpatientOption) *InpatientMu
 }
 
 // withInpatientID sets the ID field of the mutation.
-func withInpatientID(id int) inpatientOption {
+func withInpatientID(id uuid.UUID) inpatientOption {
 	return func(m *InpatientMutation) {
 		var (
 			err   error
@@ -649,9 +654,15 @@ func (m InpatientMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Inpatient entities.
+func (m *InpatientMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *InpatientMutation) ID() (id int, exists bool) {
+func (m *InpatientMutation) ID() (id uuid.UUID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -662,12 +673,12 @@ func (m *InpatientMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *InpatientMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *InpatientMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []uuid.UUID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -675,6 +686,105 @@ func (m *InpatientMutation) IDs(ctx context.Context) ([]int, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetPatientID sets the "patient_id" field.
+func (m *InpatientMutation) SetPatientID(u uuid.UUID) {
+	m.patient = &u
+}
+
+// PatientID returns the value of the "patient_id" field in the mutation.
+func (m *InpatientMutation) PatientID() (r uuid.UUID, exists bool) {
+	v := m.patient
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPatientID returns the old "patient_id" field's value of the Inpatient entity.
+// If the Inpatient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InpatientMutation) OldPatientID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPatientID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPatientID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPatientID: %w", err)
+	}
+	return oldValue.PatientID, nil
+}
+
+// ResetPatientID resets all changes to the "patient_id" field.
+func (m *InpatientMutation) ResetPatientID() {
+	m.patient = nil
+}
+
+// SetRegisterDate sets the "register_date" field.
+func (m *InpatientMutation) SetRegisterDate(t time.Time) {
+	m.register_date = &t
+}
+
+// RegisterDate returns the value of the "register_date" field in the mutation.
+func (m *InpatientMutation) RegisterDate() (r time.Time, exists bool) {
+	v := m.register_date
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRegisterDate returns the old "register_date" field's value of the Inpatient entity.
+// If the Inpatient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InpatientMutation) OldRegisterDate(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRegisterDate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRegisterDate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRegisterDate: %w", err)
+	}
+	return oldValue.RegisterDate, nil
+}
+
+// ResetRegisterDate resets all changes to the "register_date" field.
+func (m *InpatientMutation) ResetRegisterDate() {
+	m.register_date = nil
+}
+
+// ClearPatient clears the "patient" edge to the Patient entity.
+func (m *InpatientMutation) ClearPatient() {
+	m.clearedpatient = true
+	m.clearedFields[inpatient.FieldPatientID] = struct{}{}
+}
+
+// PatientCleared reports if the "patient" edge to the Patient entity was cleared.
+func (m *InpatientMutation) PatientCleared() bool {
+	return m.clearedpatient
+}
+
+// PatientIDs returns the "patient" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// PatientID instead. It exists only for internal usage by the builders.
+func (m *InpatientMutation) PatientIDs() (ids []uuid.UUID) {
+	if id := m.patient; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetPatient resets all changes to the "patient" edge.
+func (m *InpatientMutation) ResetPatient() {
+	m.patient = nil
+	m.clearedpatient = false
 }
 
 // Where appends a list predicates to the InpatientMutation builder.
@@ -711,7 +821,13 @@ func (m *InpatientMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *InpatientMutation) Fields() []string {
-	fields := make([]string, 0, 0)
+	fields := make([]string, 0, 2)
+	if m.patient != nil {
+		fields = append(fields, inpatient.FieldPatientID)
+	}
+	if m.register_date != nil {
+		fields = append(fields, inpatient.FieldRegisterDate)
+	}
 	return fields
 }
 
@@ -719,6 +835,12 @@ func (m *InpatientMutation) Fields() []string {
 // return value indicates that this field was not set, or was not defined in the
 // schema.
 func (m *InpatientMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case inpatient.FieldPatientID:
+		return m.PatientID()
+	case inpatient.FieldRegisterDate:
+		return m.RegisterDate()
+	}
 	return nil, false
 }
 
@@ -726,6 +848,12 @@ func (m *InpatientMutation) Field(name string) (ent.Value, bool) {
 // returned if the mutation operation is not UpdateOne, or the query to the
 // database failed.
 func (m *InpatientMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case inpatient.FieldPatientID:
+		return m.OldPatientID(ctx)
+	case inpatient.FieldRegisterDate:
+		return m.OldRegisterDate(ctx)
+	}
 	return nil, fmt.Errorf("unknown Inpatient field %s", name)
 }
 
@@ -734,6 +862,20 @@ func (m *InpatientMutation) OldField(ctx context.Context, name string) (ent.Valu
 // type.
 func (m *InpatientMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case inpatient.FieldPatientID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPatientID(v)
+		return nil
+	case inpatient.FieldRegisterDate:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRegisterDate(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Inpatient field %s", name)
 }
@@ -755,6 +897,8 @@ func (m *InpatientMutation) AddedField(name string) (ent.Value, bool) {
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
 func (m *InpatientMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown Inpatient numeric field %s", name)
 }
 
@@ -780,24 +924,41 @@ func (m *InpatientMutation) ClearField(name string) error {
 // ResetField resets all changes in the mutation for the field with the given name.
 // It returns an error if the field is not defined in the schema.
 func (m *InpatientMutation) ResetField(name string) error {
+	switch name {
+	case inpatient.FieldPatientID:
+		m.ResetPatientID()
+		return nil
+	case inpatient.FieldRegisterDate:
+		m.ResetRegisterDate()
+		return nil
+	}
 	return fmt.Errorf("unknown Inpatient field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *InpatientMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.patient != nil {
+		edges = append(edges, inpatient.EdgePatient)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *InpatientMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case inpatient.EdgePatient:
+		if id := m.patient; id != nil {
+			return []ent.Value{*id}
+		}
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *InpatientMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
 	return edges
 }
 
@@ -809,25 +970,42 @@ func (m *InpatientMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *InpatientMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedpatient {
+		edges = append(edges, inpatient.EdgePatient)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *InpatientMutation) EdgeCleared(name string) bool {
+	switch name {
+	case inpatient.EdgePatient:
+		return m.clearedpatient
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *InpatientMutation) ClearEdge(name string) error {
+	switch name {
+	case inpatient.EdgePatient:
+		m.ClearPatient()
+		return nil
+	}
 	return fmt.Errorf("unknown Inpatient unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *InpatientMutation) ResetEdge(name string) error {
+	switch name {
+	case inpatient.EdgePatient:
+		m.ResetPatient()
+		return nil
+	}
 	return fmt.Errorf("unknown Inpatient edge %s", name)
 }
 
@@ -1890,13 +2068,16 @@ func (m *MedicationEffectMutation) ResetEdge(name string) error {
 // OutpatientMutation represents an operation that mutates the Outpatient nodes in the graph.
 type OutpatientMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*Outpatient, error)
-	predicates    []predicate.Outpatient
+	op             Op
+	typ            string
+	id             *uuid.UUID
+	register_date  *time.Time
+	clearedFields  map[string]struct{}
+	patient        *uuid.UUID
+	clearedpatient bool
+	done           bool
+	oldValue       func(context.Context) (*Outpatient, error)
+	predicates     []predicate.Outpatient
 }
 
 var _ ent.Mutation = (*OutpatientMutation)(nil)
@@ -1919,7 +2100,7 @@ func newOutpatientMutation(c config, op Op, opts ...outpatientOption) *Outpatien
 }
 
 // withOutpatientID sets the ID field of the mutation.
-func withOutpatientID(id int) outpatientOption {
+func withOutpatientID(id uuid.UUID) outpatientOption {
 	return func(m *OutpatientMutation) {
 		var (
 			err   error
@@ -1969,9 +2150,15 @@ func (m OutpatientMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Outpatient entities.
+func (m *OutpatientMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *OutpatientMutation) ID() (id int, exists bool) {
+func (m *OutpatientMutation) ID() (id uuid.UUID, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -1982,12 +2169,12 @@ func (m *OutpatientMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *OutpatientMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *OutpatientMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []int{id}, nil
+			return []uuid.UUID{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
@@ -1995,6 +2182,105 @@ func (m *OutpatientMutation) IDs(ctx context.Context) ([]int, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetPatientID sets the "patient_id" field.
+func (m *OutpatientMutation) SetPatientID(u uuid.UUID) {
+	m.patient = &u
+}
+
+// PatientID returns the value of the "patient_id" field in the mutation.
+func (m *OutpatientMutation) PatientID() (r uuid.UUID, exists bool) {
+	v := m.patient
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPatientID returns the old "patient_id" field's value of the Outpatient entity.
+// If the Outpatient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OutpatientMutation) OldPatientID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPatientID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPatientID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPatientID: %w", err)
+	}
+	return oldValue.PatientID, nil
+}
+
+// ResetPatientID resets all changes to the "patient_id" field.
+func (m *OutpatientMutation) ResetPatientID() {
+	m.patient = nil
+}
+
+// SetRegisterDate sets the "register_date" field.
+func (m *OutpatientMutation) SetRegisterDate(t time.Time) {
+	m.register_date = &t
+}
+
+// RegisterDate returns the value of the "register_date" field in the mutation.
+func (m *OutpatientMutation) RegisterDate() (r time.Time, exists bool) {
+	v := m.register_date
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRegisterDate returns the old "register_date" field's value of the Outpatient entity.
+// If the Outpatient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OutpatientMutation) OldRegisterDate(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRegisterDate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRegisterDate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRegisterDate: %w", err)
+	}
+	return oldValue.RegisterDate, nil
+}
+
+// ResetRegisterDate resets all changes to the "register_date" field.
+func (m *OutpatientMutation) ResetRegisterDate() {
+	m.register_date = nil
+}
+
+// ClearPatient clears the "patient" edge to the Patient entity.
+func (m *OutpatientMutation) ClearPatient() {
+	m.clearedpatient = true
+	m.clearedFields[outpatient.FieldPatientID] = struct{}{}
+}
+
+// PatientCleared reports if the "patient" edge to the Patient entity was cleared.
+func (m *OutpatientMutation) PatientCleared() bool {
+	return m.clearedpatient
+}
+
+// PatientIDs returns the "patient" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// PatientID instead. It exists only for internal usage by the builders.
+func (m *OutpatientMutation) PatientIDs() (ids []uuid.UUID) {
+	if id := m.patient; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetPatient resets all changes to the "patient" edge.
+func (m *OutpatientMutation) ResetPatient() {
+	m.patient = nil
+	m.clearedpatient = false
 }
 
 // Where appends a list predicates to the OutpatientMutation builder.
@@ -2031,7 +2317,13 @@ func (m *OutpatientMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OutpatientMutation) Fields() []string {
-	fields := make([]string, 0, 0)
+	fields := make([]string, 0, 2)
+	if m.patient != nil {
+		fields = append(fields, outpatient.FieldPatientID)
+	}
+	if m.register_date != nil {
+		fields = append(fields, outpatient.FieldRegisterDate)
+	}
 	return fields
 }
 
@@ -2039,6 +2331,12 @@ func (m *OutpatientMutation) Fields() []string {
 // return value indicates that this field was not set, or was not defined in the
 // schema.
 func (m *OutpatientMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case outpatient.FieldPatientID:
+		return m.PatientID()
+	case outpatient.FieldRegisterDate:
+		return m.RegisterDate()
+	}
 	return nil, false
 }
 
@@ -2046,6 +2344,12 @@ func (m *OutpatientMutation) Field(name string) (ent.Value, bool) {
 // returned if the mutation operation is not UpdateOne, or the query to the
 // database failed.
 func (m *OutpatientMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case outpatient.FieldPatientID:
+		return m.OldPatientID(ctx)
+	case outpatient.FieldRegisterDate:
+		return m.OldRegisterDate(ctx)
+	}
 	return nil, fmt.Errorf("unknown Outpatient field %s", name)
 }
 
@@ -2054,6 +2358,20 @@ func (m *OutpatientMutation) OldField(ctx context.Context, name string) (ent.Val
 // type.
 func (m *OutpatientMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case outpatient.FieldPatientID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPatientID(v)
+		return nil
+	case outpatient.FieldRegisterDate:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRegisterDate(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Outpatient field %s", name)
 }
@@ -2075,6 +2393,8 @@ func (m *OutpatientMutation) AddedField(name string) (ent.Value, bool) {
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
 func (m *OutpatientMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown Outpatient numeric field %s", name)
 }
 
@@ -2100,24 +2420,41 @@ func (m *OutpatientMutation) ClearField(name string) error {
 // ResetField resets all changes in the mutation for the field with the given name.
 // It returns an error if the field is not defined in the schema.
 func (m *OutpatientMutation) ResetField(name string) error {
+	switch name {
+	case outpatient.FieldPatientID:
+		m.ResetPatientID()
+		return nil
+	case outpatient.FieldRegisterDate:
+		m.ResetRegisterDate()
+		return nil
+	}
 	return fmt.Errorf("unknown Outpatient field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *OutpatientMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.patient != nil {
+		edges = append(edges, outpatient.EdgePatient)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *OutpatientMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case outpatient.EdgePatient:
+		if id := m.patient; id != nil {
+			return []ent.Value{*id}
+		}
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *OutpatientMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
 	return edges
 }
 
@@ -2129,25 +2466,42 @@ func (m *OutpatientMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *OutpatientMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.clearedpatient {
+		edges = append(edges, outpatient.EdgePatient)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *OutpatientMutation) EdgeCleared(name string) bool {
+	switch name {
+	case outpatient.EdgePatient:
+		return m.clearedpatient
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *OutpatientMutation) ClearEdge(name string) error {
+	switch name {
+	case outpatient.EdgePatient:
+		m.ClearPatient()
+		return nil
+	}
 	return fmt.Errorf("unknown Outpatient unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *OutpatientMutation) ResetEdge(name string) error {
+	switch name {
+	case outpatient.EdgePatient:
+		m.ResetPatient()
+		return nil
+	}
 	return fmt.Errorf("unknown Outpatient edge %s", name)
 }
 
@@ -2418,20 +2772,28 @@ func (m *OutpatientDetailMutation) ResetEdge(name string) error {
 // PatientMutation represents an operation that mutates the Patient nodes in the graph.
 type PatientMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	phone_number  *string
-	first_name    *string
-	last_name     *string
-	gender        *int32
-	addgender     *int32
-	address       *string
-	date_of_birth *time.Time
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*Patient, error)
-	predicates    []predicate.Patient
+	op                      Op
+	typ                     string
+	id                      *uuid.UUID
+	phone_number            *string
+	first_name              *string
+	last_name               *string
+	gender                  *int32
+	addgender               *int32
+	address                 *string
+	date_of_birth           *time.Time
+	current_patient_type    *int32
+	addcurrent_patient_type *int32
+	clearedFields           map[string]struct{}
+	inpatients              map[uuid.UUID]struct{}
+	removedinpatients       map[uuid.UUID]struct{}
+	clearedinpatients       bool
+	outpatients             map[uuid.UUID]struct{}
+	removedoutpatients      map[uuid.UUID]struct{}
+	clearedoutpatients      bool
+	done                    bool
+	oldValue                func(context.Context) (*Patient, error)
+	predicates              []predicate.Patient
 }
 
 var _ ent.Mutation = (*PatientMutation)(nil)
@@ -2774,6 +3136,170 @@ func (m *PatientMutation) ResetDateOfBirth() {
 	m.date_of_birth = nil
 }
 
+// SetCurrentPatientType sets the "current_patient_type" field.
+func (m *PatientMutation) SetCurrentPatientType(i int32) {
+	m.current_patient_type = &i
+	m.addcurrent_patient_type = nil
+}
+
+// CurrentPatientType returns the value of the "current_patient_type" field in the mutation.
+func (m *PatientMutation) CurrentPatientType() (r int32, exists bool) {
+	v := m.current_patient_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCurrentPatientType returns the old "current_patient_type" field's value of the Patient entity.
+// If the Patient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PatientMutation) OldCurrentPatientType(ctx context.Context) (v int32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCurrentPatientType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCurrentPatientType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCurrentPatientType: %w", err)
+	}
+	return oldValue.CurrentPatientType, nil
+}
+
+// AddCurrentPatientType adds i to the "current_patient_type" field.
+func (m *PatientMutation) AddCurrentPatientType(i int32) {
+	if m.addcurrent_patient_type != nil {
+		*m.addcurrent_patient_type += i
+	} else {
+		m.addcurrent_patient_type = &i
+	}
+}
+
+// AddedCurrentPatientType returns the value that was added to the "current_patient_type" field in this mutation.
+func (m *PatientMutation) AddedCurrentPatientType() (r int32, exists bool) {
+	v := m.addcurrent_patient_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCurrentPatientType resets all changes to the "current_patient_type" field.
+func (m *PatientMutation) ResetCurrentPatientType() {
+	m.current_patient_type = nil
+	m.addcurrent_patient_type = nil
+}
+
+// AddInpatientIDs adds the "inpatients" edge to the Inpatient entity by ids.
+func (m *PatientMutation) AddInpatientIDs(ids ...uuid.UUID) {
+	if m.inpatients == nil {
+		m.inpatients = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.inpatients[ids[i]] = struct{}{}
+	}
+}
+
+// ClearInpatients clears the "inpatients" edge to the Inpatient entity.
+func (m *PatientMutation) ClearInpatients() {
+	m.clearedinpatients = true
+}
+
+// InpatientsCleared reports if the "inpatients" edge to the Inpatient entity was cleared.
+func (m *PatientMutation) InpatientsCleared() bool {
+	return m.clearedinpatients
+}
+
+// RemoveInpatientIDs removes the "inpatients" edge to the Inpatient entity by IDs.
+func (m *PatientMutation) RemoveInpatientIDs(ids ...uuid.UUID) {
+	if m.removedinpatients == nil {
+		m.removedinpatients = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.inpatients, ids[i])
+		m.removedinpatients[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedInpatients returns the removed IDs of the "inpatients" edge to the Inpatient entity.
+func (m *PatientMutation) RemovedInpatientsIDs() (ids []uuid.UUID) {
+	for id := range m.removedinpatients {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// InpatientsIDs returns the "inpatients" edge IDs in the mutation.
+func (m *PatientMutation) InpatientsIDs() (ids []uuid.UUID) {
+	for id := range m.inpatients {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetInpatients resets all changes to the "inpatients" edge.
+func (m *PatientMutation) ResetInpatients() {
+	m.inpatients = nil
+	m.clearedinpatients = false
+	m.removedinpatients = nil
+}
+
+// AddOutpatientIDs adds the "outpatients" edge to the Outpatient entity by ids.
+func (m *PatientMutation) AddOutpatientIDs(ids ...uuid.UUID) {
+	if m.outpatients == nil {
+		m.outpatients = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.outpatients[ids[i]] = struct{}{}
+	}
+}
+
+// ClearOutpatients clears the "outpatients" edge to the Outpatient entity.
+func (m *PatientMutation) ClearOutpatients() {
+	m.clearedoutpatients = true
+}
+
+// OutpatientsCleared reports if the "outpatients" edge to the Outpatient entity was cleared.
+func (m *PatientMutation) OutpatientsCleared() bool {
+	return m.clearedoutpatients
+}
+
+// RemoveOutpatientIDs removes the "outpatients" edge to the Outpatient entity by IDs.
+func (m *PatientMutation) RemoveOutpatientIDs(ids ...uuid.UUID) {
+	if m.removedoutpatients == nil {
+		m.removedoutpatients = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.outpatients, ids[i])
+		m.removedoutpatients[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedOutpatients returns the removed IDs of the "outpatients" edge to the Outpatient entity.
+func (m *PatientMutation) RemovedOutpatientsIDs() (ids []uuid.UUID) {
+	for id := range m.removedoutpatients {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// OutpatientsIDs returns the "outpatients" edge IDs in the mutation.
+func (m *PatientMutation) OutpatientsIDs() (ids []uuid.UUID) {
+	for id := range m.outpatients {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetOutpatients resets all changes to the "outpatients" edge.
+func (m *PatientMutation) ResetOutpatients() {
+	m.outpatients = nil
+	m.clearedoutpatients = false
+	m.removedoutpatients = nil
+}
+
 // Where appends a list predicates to the PatientMutation builder.
 func (m *PatientMutation) Where(ps ...predicate.Patient) {
 	m.predicates = append(m.predicates, ps...)
@@ -2808,7 +3334,7 @@ func (m *PatientMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PatientMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.phone_number != nil {
 		fields = append(fields, patient.FieldPhoneNumber)
 	}
@@ -2826,6 +3352,9 @@ func (m *PatientMutation) Fields() []string {
 	}
 	if m.date_of_birth != nil {
 		fields = append(fields, patient.FieldDateOfBirth)
+	}
+	if m.current_patient_type != nil {
+		fields = append(fields, patient.FieldCurrentPatientType)
 	}
 	return fields
 }
@@ -2847,6 +3376,8 @@ func (m *PatientMutation) Field(name string) (ent.Value, bool) {
 		return m.Address()
 	case patient.FieldDateOfBirth:
 		return m.DateOfBirth()
+	case patient.FieldCurrentPatientType:
+		return m.CurrentPatientType()
 	}
 	return nil, false
 }
@@ -2868,6 +3399,8 @@ func (m *PatientMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldAddress(ctx)
 	case patient.FieldDateOfBirth:
 		return m.OldDateOfBirth(ctx)
+	case patient.FieldCurrentPatientType:
+		return m.OldCurrentPatientType(ctx)
 	}
 	return nil, fmt.Errorf("unknown Patient field %s", name)
 }
@@ -2919,6 +3452,13 @@ func (m *PatientMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetDateOfBirth(v)
 		return nil
+	case patient.FieldCurrentPatientType:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCurrentPatientType(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Patient field %s", name)
 }
@@ -2930,6 +3470,9 @@ func (m *PatientMutation) AddedFields() []string {
 	if m.addgender != nil {
 		fields = append(fields, patient.FieldGender)
 	}
+	if m.addcurrent_patient_type != nil {
+		fields = append(fields, patient.FieldCurrentPatientType)
+	}
 	return fields
 }
 
@@ -2940,6 +3483,8 @@ func (m *PatientMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case patient.FieldGender:
 		return m.AddedGender()
+	case patient.FieldCurrentPatientType:
+		return m.AddedCurrentPatientType()
 	}
 	return nil, false
 }
@@ -2955,6 +3500,13 @@ func (m *PatientMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddGender(v)
+		return nil
+	case patient.FieldCurrentPatientType:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCurrentPatientType(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Patient numeric field %s", name)
@@ -3001,55 +3553,120 @@ func (m *PatientMutation) ResetField(name string) error {
 	case patient.FieldDateOfBirth:
 		m.ResetDateOfBirth()
 		return nil
+	case patient.FieldCurrentPatientType:
+		m.ResetCurrentPatientType()
+		return nil
 	}
 	return fmt.Errorf("unknown Patient field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *PatientMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
+	if m.inpatients != nil {
+		edges = append(edges, patient.EdgeInpatients)
+	}
+	if m.outpatients != nil {
+		edges = append(edges, patient.EdgeOutpatients)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *PatientMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case patient.EdgeInpatients:
+		ids := make([]ent.Value, 0, len(m.inpatients))
+		for id := range m.inpatients {
+			ids = append(ids, id)
+		}
+		return ids
+	case patient.EdgeOutpatients:
+		ids := make([]ent.Value, 0, len(m.outpatients))
+		for id := range m.outpatients {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *PatientMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
+	if m.removedinpatients != nil {
+		edges = append(edges, patient.EdgeInpatients)
+	}
+	if m.removedoutpatients != nil {
+		edges = append(edges, patient.EdgeOutpatients)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *PatientMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case patient.EdgeInpatients:
+		ids := make([]ent.Value, 0, len(m.removedinpatients))
+		for id := range m.removedinpatients {
+			ids = append(ids, id)
+		}
+		return ids
+	case patient.EdgeOutpatients:
+		ids := make([]ent.Value, 0, len(m.removedoutpatients))
+		for id := range m.removedoutpatients {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *PatientMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
+	if m.clearedinpatients {
+		edges = append(edges, patient.EdgeInpatients)
+	}
+	if m.clearedoutpatients {
+		edges = append(edges, patient.EdgeOutpatients)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *PatientMutation) EdgeCleared(name string) bool {
+	switch name {
+	case patient.EdgeInpatients:
+		return m.clearedinpatients
+	case patient.EdgeOutpatients:
+		return m.clearedoutpatients
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *PatientMutation) ClearEdge(name string) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown Patient unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *PatientMutation) ResetEdge(name string) error {
+	switch name {
+	case patient.EdgeInpatients:
+		m.ResetInpatients()
+		return nil
+	case patient.EdgeOutpatients:
+		m.ResetOutpatients()
+		return nil
+	}
 	return fmt.Errorf("unknown Patient edge %s", name)
 }
 

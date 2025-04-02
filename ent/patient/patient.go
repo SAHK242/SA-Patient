@@ -4,6 +4,7 @@ package patient
 
 import (
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
 )
 
@@ -24,8 +25,28 @@ const (
 	FieldAddress = "address"
 	// FieldDateOfBirth holds the string denoting the date_of_birth field in the database.
 	FieldDateOfBirth = "date_of_birth"
+	// FieldCurrentPatientType holds the string denoting the current_patient_type field in the database.
+	FieldCurrentPatientType = "current_patient_type"
+	// EdgeInpatients holds the string denoting the inpatients edge name in mutations.
+	EdgeInpatients = "inpatients"
+	// EdgeOutpatients holds the string denoting the outpatients edge name in mutations.
+	EdgeOutpatients = "outpatients"
 	// Table holds the table name of the patient in the database.
 	Table = "patient"
+	// InpatientsTable is the table that holds the inpatients relation/edge.
+	InpatientsTable = "inpatient"
+	// InpatientsInverseTable is the table name for the Inpatient entity.
+	// It exists in this package in order to avoid circular dependency with the "inpatient" package.
+	InpatientsInverseTable = "inpatient"
+	// InpatientsColumn is the table column denoting the inpatients relation/edge.
+	InpatientsColumn = "patient_id"
+	// OutpatientsTable is the table that holds the outpatients relation/edge.
+	OutpatientsTable = "outpatient"
+	// OutpatientsInverseTable is the table name for the Outpatient entity.
+	// It exists in this package in order to avoid circular dependency with the "outpatient" package.
+	OutpatientsInverseTable = "outpatient"
+	// OutpatientsColumn is the table column denoting the outpatients relation/edge.
+	OutpatientsColumn = "patient_id"
 )
 
 // Columns holds all SQL columns for patient fields.
@@ -37,6 +58,7 @@ var Columns = []string{
 	FieldGender,
 	FieldAddress,
 	FieldDateOfBirth,
+	FieldCurrentPatientType,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -52,6 +74,8 @@ func ValidColumn(column string) bool {
 var (
 	// GenderValidator is a validator for the "gender" field. It is called by the builders before save.
 	GenderValidator func(int32) error
+	// DefaultCurrentPatientType holds the default value on creation for the "current_patient_type" field.
+	DefaultCurrentPatientType int32
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -92,4 +116,51 @@ func ByAddress(opts ...sql.OrderTermOption) OrderOption {
 // ByDateOfBirth orders the results by the date_of_birth field.
 func ByDateOfBirth(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDateOfBirth, opts...).ToFunc()
+}
+
+// ByCurrentPatientType orders the results by the current_patient_type field.
+func ByCurrentPatientType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCurrentPatientType, opts...).ToFunc()
+}
+
+// ByInpatientsCount orders the results by inpatients count.
+func ByInpatientsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newInpatientsStep(), opts...)
+	}
+}
+
+// ByInpatients orders the results by inpatients terms.
+func ByInpatients(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newInpatientsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByOutpatientsCount orders the results by outpatients count.
+func ByOutpatientsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newOutpatientsStep(), opts...)
+	}
+}
+
+// ByOutpatients orders the results by outpatients terms.
+func ByOutpatients(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOutpatientsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newInpatientsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(InpatientsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, InpatientsTable, InpatientsColumn),
+	)
+}
+func newOutpatientsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OutpatientsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, OutpatientsTable, OutpatientsColumn),
+	)
 }

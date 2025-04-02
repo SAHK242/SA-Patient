@@ -7,11 +7,14 @@ import (
 	"errors"
 	"fmt"
 	"patient/ent/outpatient"
+	"patient/ent/patient"
 	"patient/ent/predicate"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // OutpatientUpdate is the builder for updating Outpatient entities.
@@ -27,9 +30,48 @@ func (ou *OutpatientUpdate) Where(ps ...predicate.Outpatient) *OutpatientUpdate 
 	return ou
 }
 
+// SetPatientID sets the "patient_id" field.
+func (ou *OutpatientUpdate) SetPatientID(u uuid.UUID) *OutpatientUpdate {
+	ou.mutation.SetPatientID(u)
+	return ou
+}
+
+// SetNillablePatientID sets the "patient_id" field if the given value is not nil.
+func (ou *OutpatientUpdate) SetNillablePatientID(u *uuid.UUID) *OutpatientUpdate {
+	if u != nil {
+		ou.SetPatientID(*u)
+	}
+	return ou
+}
+
+// SetRegisterDate sets the "register_date" field.
+func (ou *OutpatientUpdate) SetRegisterDate(t time.Time) *OutpatientUpdate {
+	ou.mutation.SetRegisterDate(t)
+	return ou
+}
+
+// SetNillableRegisterDate sets the "register_date" field if the given value is not nil.
+func (ou *OutpatientUpdate) SetNillableRegisterDate(t *time.Time) *OutpatientUpdate {
+	if t != nil {
+		ou.SetRegisterDate(*t)
+	}
+	return ou
+}
+
+// SetPatient sets the "patient" edge to the Patient entity.
+func (ou *OutpatientUpdate) SetPatient(p *Patient) *OutpatientUpdate {
+	return ou.SetPatientID(p.ID)
+}
+
 // Mutation returns the OutpatientMutation object of the builder.
 func (ou *OutpatientUpdate) Mutation() *OutpatientMutation {
 	return ou.mutation
+}
+
+// ClearPatient clears the "patient" edge to the Patient entity.
+func (ou *OutpatientUpdate) ClearPatient() *OutpatientUpdate {
+	ou.mutation.ClearPatient()
+	return ou
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -59,14 +101,57 @@ func (ou *OutpatientUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (ou *OutpatientUpdate) check() error {
+	if ou.mutation.PatientCleared() && len(ou.mutation.PatientIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Outpatient.patient"`)
+	}
+	return nil
+}
+
 func (ou *OutpatientUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := sqlgraph.NewUpdateSpec(outpatient.Table, outpatient.Columns, sqlgraph.NewFieldSpec(outpatient.FieldID, field.TypeInt))
+	if err := ou.check(); err != nil {
+		return n, err
+	}
+	_spec := sqlgraph.NewUpdateSpec(outpatient.Table, outpatient.Columns, sqlgraph.NewFieldSpec(outpatient.FieldID, field.TypeUUID))
 	if ps := ou.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := ou.mutation.RegisterDate(); ok {
+		_spec.SetField(outpatient.FieldRegisterDate, field.TypeTime, value)
+	}
+	if ou.mutation.PatientCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   outpatient.PatientTable,
+			Columns: []string{outpatient.PatientColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(patient.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ou.mutation.PatientIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   outpatient.PatientTable,
+			Columns: []string{outpatient.PatientColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(patient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, ou.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -88,9 +173,48 @@ type OutpatientUpdateOne struct {
 	mutation *OutpatientMutation
 }
 
+// SetPatientID sets the "patient_id" field.
+func (ouo *OutpatientUpdateOne) SetPatientID(u uuid.UUID) *OutpatientUpdateOne {
+	ouo.mutation.SetPatientID(u)
+	return ouo
+}
+
+// SetNillablePatientID sets the "patient_id" field if the given value is not nil.
+func (ouo *OutpatientUpdateOne) SetNillablePatientID(u *uuid.UUID) *OutpatientUpdateOne {
+	if u != nil {
+		ouo.SetPatientID(*u)
+	}
+	return ouo
+}
+
+// SetRegisterDate sets the "register_date" field.
+func (ouo *OutpatientUpdateOne) SetRegisterDate(t time.Time) *OutpatientUpdateOne {
+	ouo.mutation.SetRegisterDate(t)
+	return ouo
+}
+
+// SetNillableRegisterDate sets the "register_date" field if the given value is not nil.
+func (ouo *OutpatientUpdateOne) SetNillableRegisterDate(t *time.Time) *OutpatientUpdateOne {
+	if t != nil {
+		ouo.SetRegisterDate(*t)
+	}
+	return ouo
+}
+
+// SetPatient sets the "patient" edge to the Patient entity.
+func (ouo *OutpatientUpdateOne) SetPatient(p *Patient) *OutpatientUpdateOne {
+	return ouo.SetPatientID(p.ID)
+}
+
 // Mutation returns the OutpatientMutation object of the builder.
 func (ouo *OutpatientUpdateOne) Mutation() *OutpatientMutation {
 	return ouo.mutation
+}
+
+// ClearPatient clears the "patient" edge to the Patient entity.
+func (ouo *OutpatientUpdateOne) ClearPatient() *OutpatientUpdateOne {
+	ouo.mutation.ClearPatient()
+	return ouo
 }
 
 // Where appends a list predicates to the OutpatientUpdate builder.
@@ -133,8 +257,19 @@ func (ouo *OutpatientUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (ouo *OutpatientUpdateOne) check() error {
+	if ouo.mutation.PatientCleared() && len(ouo.mutation.PatientIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Outpatient.patient"`)
+	}
+	return nil
+}
+
 func (ouo *OutpatientUpdateOne) sqlSave(ctx context.Context) (_node *Outpatient, err error) {
-	_spec := sqlgraph.NewUpdateSpec(outpatient.Table, outpatient.Columns, sqlgraph.NewFieldSpec(outpatient.FieldID, field.TypeInt))
+	if err := ouo.check(); err != nil {
+		return _node, err
+	}
+	_spec := sqlgraph.NewUpdateSpec(outpatient.Table, outpatient.Columns, sqlgraph.NewFieldSpec(outpatient.FieldID, field.TypeUUID))
 	id, ok := ouo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Outpatient.id" for update`)}
@@ -158,6 +293,38 @@ func (ouo *OutpatientUpdateOne) sqlSave(ctx context.Context) (_node *Outpatient,
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := ouo.mutation.RegisterDate(); ok {
+		_spec.SetField(outpatient.FieldRegisterDate, field.TypeTime, value)
+	}
+	if ouo.mutation.PatientCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   outpatient.PatientTable,
+			Columns: []string{outpatient.PatientColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(patient.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ouo.mutation.PatientIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   outpatient.PatientTable,
+			Columns: []string{outpatient.PatientColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(patient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Outpatient{config: ouo.config}
 	_spec.Assign = _node.assignValues

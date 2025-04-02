@@ -7,11 +7,14 @@ import (
 	"errors"
 	"fmt"
 	"patient/ent/inpatient"
+	"patient/ent/patient"
 	"patient/ent/predicate"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // InpatientUpdate is the builder for updating Inpatient entities.
@@ -27,9 +30,48 @@ func (iu *InpatientUpdate) Where(ps ...predicate.Inpatient) *InpatientUpdate {
 	return iu
 }
 
+// SetPatientID sets the "patient_id" field.
+func (iu *InpatientUpdate) SetPatientID(u uuid.UUID) *InpatientUpdate {
+	iu.mutation.SetPatientID(u)
+	return iu
+}
+
+// SetNillablePatientID sets the "patient_id" field if the given value is not nil.
+func (iu *InpatientUpdate) SetNillablePatientID(u *uuid.UUID) *InpatientUpdate {
+	if u != nil {
+		iu.SetPatientID(*u)
+	}
+	return iu
+}
+
+// SetRegisterDate sets the "register_date" field.
+func (iu *InpatientUpdate) SetRegisterDate(t time.Time) *InpatientUpdate {
+	iu.mutation.SetRegisterDate(t)
+	return iu
+}
+
+// SetNillableRegisterDate sets the "register_date" field if the given value is not nil.
+func (iu *InpatientUpdate) SetNillableRegisterDate(t *time.Time) *InpatientUpdate {
+	if t != nil {
+		iu.SetRegisterDate(*t)
+	}
+	return iu
+}
+
+// SetPatient sets the "patient" edge to the Patient entity.
+func (iu *InpatientUpdate) SetPatient(p *Patient) *InpatientUpdate {
+	return iu.SetPatientID(p.ID)
+}
+
 // Mutation returns the InpatientMutation object of the builder.
 func (iu *InpatientUpdate) Mutation() *InpatientMutation {
 	return iu.mutation
+}
+
+// ClearPatient clears the "patient" edge to the Patient entity.
+func (iu *InpatientUpdate) ClearPatient() *InpatientUpdate {
+	iu.mutation.ClearPatient()
+	return iu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -59,14 +101,57 @@ func (iu *InpatientUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (iu *InpatientUpdate) check() error {
+	if iu.mutation.PatientCleared() && len(iu.mutation.PatientIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Inpatient.patient"`)
+	}
+	return nil
+}
+
 func (iu *InpatientUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := sqlgraph.NewUpdateSpec(inpatient.Table, inpatient.Columns, sqlgraph.NewFieldSpec(inpatient.FieldID, field.TypeInt))
+	if err := iu.check(); err != nil {
+		return n, err
+	}
+	_spec := sqlgraph.NewUpdateSpec(inpatient.Table, inpatient.Columns, sqlgraph.NewFieldSpec(inpatient.FieldID, field.TypeUUID))
 	if ps := iu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := iu.mutation.RegisterDate(); ok {
+		_spec.SetField(inpatient.FieldRegisterDate, field.TypeTime, value)
+	}
+	if iu.mutation.PatientCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   inpatient.PatientTable,
+			Columns: []string{inpatient.PatientColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(patient.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iu.mutation.PatientIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   inpatient.PatientTable,
+			Columns: []string{inpatient.PatientColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(patient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, iu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -88,9 +173,48 @@ type InpatientUpdateOne struct {
 	mutation *InpatientMutation
 }
 
+// SetPatientID sets the "patient_id" field.
+func (iuo *InpatientUpdateOne) SetPatientID(u uuid.UUID) *InpatientUpdateOne {
+	iuo.mutation.SetPatientID(u)
+	return iuo
+}
+
+// SetNillablePatientID sets the "patient_id" field if the given value is not nil.
+func (iuo *InpatientUpdateOne) SetNillablePatientID(u *uuid.UUID) *InpatientUpdateOne {
+	if u != nil {
+		iuo.SetPatientID(*u)
+	}
+	return iuo
+}
+
+// SetRegisterDate sets the "register_date" field.
+func (iuo *InpatientUpdateOne) SetRegisterDate(t time.Time) *InpatientUpdateOne {
+	iuo.mutation.SetRegisterDate(t)
+	return iuo
+}
+
+// SetNillableRegisterDate sets the "register_date" field if the given value is not nil.
+func (iuo *InpatientUpdateOne) SetNillableRegisterDate(t *time.Time) *InpatientUpdateOne {
+	if t != nil {
+		iuo.SetRegisterDate(*t)
+	}
+	return iuo
+}
+
+// SetPatient sets the "patient" edge to the Patient entity.
+func (iuo *InpatientUpdateOne) SetPatient(p *Patient) *InpatientUpdateOne {
+	return iuo.SetPatientID(p.ID)
+}
+
 // Mutation returns the InpatientMutation object of the builder.
 func (iuo *InpatientUpdateOne) Mutation() *InpatientMutation {
 	return iuo.mutation
+}
+
+// ClearPatient clears the "patient" edge to the Patient entity.
+func (iuo *InpatientUpdateOne) ClearPatient() *InpatientUpdateOne {
+	iuo.mutation.ClearPatient()
+	return iuo
 }
 
 // Where appends a list predicates to the InpatientUpdate builder.
@@ -133,8 +257,19 @@ func (iuo *InpatientUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (iuo *InpatientUpdateOne) check() error {
+	if iuo.mutation.PatientCleared() && len(iuo.mutation.PatientIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Inpatient.patient"`)
+	}
+	return nil
+}
+
 func (iuo *InpatientUpdateOne) sqlSave(ctx context.Context) (_node *Inpatient, err error) {
-	_spec := sqlgraph.NewUpdateSpec(inpatient.Table, inpatient.Columns, sqlgraph.NewFieldSpec(inpatient.FieldID, field.TypeInt))
+	if err := iuo.check(); err != nil {
+		return _node, err
+	}
+	_spec := sqlgraph.NewUpdateSpec(inpatient.Table, inpatient.Columns, sqlgraph.NewFieldSpec(inpatient.FieldID, field.TypeUUID))
 	id, ok := iuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Inpatient.id" for update`)}
@@ -158,6 +293,38 @@ func (iuo *InpatientUpdateOne) sqlSave(ctx context.Context) (_node *Inpatient, e
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := iuo.mutation.RegisterDate(); ok {
+		_spec.SetField(inpatient.FieldRegisterDate, field.TypeTime, value)
+	}
+	if iuo.mutation.PatientCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   inpatient.PatientTable,
+			Columns: []string{inpatient.PatientColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(patient.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iuo.mutation.PatientIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   inpatient.PatientTable,
+			Columns: []string{inpatient.PatientColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(patient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Inpatient{config: iuo.config}
 	_spec.Assign = _node.assignValues

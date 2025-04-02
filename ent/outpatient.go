@@ -5,18 +5,48 @@ package ent
 import (
 	"fmt"
 	"patient/ent/outpatient"
+	"patient/ent/patient"
 	"strings"
+	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 )
 
 // Outpatient is the model entity for the Outpatient schema.
 type Outpatient struct {
-	config
+	config `json:"-"`
 	// ID of the ent.
-	ID           int `json:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty"`
+	// PatientID holds the value of the "patient_id" field.
+	PatientID uuid.UUID `json:"patient_id,omitempty"`
+	// RegisterDate holds the value of the "register_date" field.
+	RegisterDate time.Time `json:"register_date,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the OutpatientQuery when eager-loading is set.
+	Edges        OutpatientEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// OutpatientEdges holds the relations/edges for other nodes in the graph.
+type OutpatientEdges struct {
+	// Patient holds the value of the patient edge.
+	Patient *Patient `json:"patient,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// PatientOrErr returns the Patient value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e OutpatientEdges) PatientOrErr() (*Patient, error) {
+	if e.Patient != nil {
+		return e.Patient, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: patient.Label}
+	}
+	return nil, &NotLoadedError{edge: "patient"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -24,8 +54,10 @@ func (*Outpatient) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case outpatient.FieldID:
-			values[i] = new(sql.NullInt64)
+		case outpatient.FieldRegisterDate:
+			values[i] = new(sql.NullTime)
+		case outpatient.FieldID, outpatient.FieldPatientID:
+			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -42,11 +74,23 @@ func (o *Outpatient) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case outpatient.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value != nil {
+				o.ID = *value
 			}
-			o.ID = int(value.Int64)
+		case outpatient.FieldPatientID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field patient_id", values[i])
+			} else if value != nil {
+				o.PatientID = *value
+			}
+		case outpatient.FieldRegisterDate:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field register_date", values[i])
+			} else if value.Valid {
+				o.RegisterDate = value.Time
+			}
 		default:
 			o.selectValues.Set(columns[i], values[i])
 		}
@@ -58,6 +102,11 @@ func (o *Outpatient) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (o *Outpatient) Value(name string) (ent.Value, error) {
 	return o.selectValues.Get(name)
+}
+
+// QueryPatient queries the "patient" edge of the Outpatient entity.
+func (o *Outpatient) QueryPatient() *PatientQuery {
+	return NewOutpatientClient(o.config).QueryPatient(o)
 }
 
 // Update returns a builder for updating this Outpatient.
@@ -82,7 +131,12 @@ func (o *Outpatient) Unwrap() *Outpatient {
 func (o *Outpatient) String() string {
 	var builder strings.Builder
 	builder.WriteString("Outpatient(")
-	builder.WriteString(fmt.Sprintf("id=%v", o.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", o.ID))
+	builder.WriteString("patient_id=")
+	builder.WriteString(fmt.Sprintf("%v", o.PatientID))
+	builder.WriteString(", ")
+	builder.WriteString("register_date=")
+	builder.WriteString(o.RegisterDate.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

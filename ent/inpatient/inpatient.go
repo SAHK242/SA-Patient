@@ -4,6 +4,8 @@ package inpatient
 
 import (
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/google/uuid"
 )
 
 const (
@@ -11,13 +13,28 @@ const (
 	Label = "inpatient"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldPatientID holds the string denoting the patient_id field in the database.
+	FieldPatientID = "patient_id"
+	// FieldRegisterDate holds the string denoting the register_date field in the database.
+	FieldRegisterDate = "register_date"
+	// EdgePatient holds the string denoting the patient edge name in mutations.
+	EdgePatient = "patient"
 	// Table holds the table name of the inpatient in the database.
-	Table = "inpatients"
+	Table = "inpatient"
+	// PatientTable is the table that holds the patient relation/edge.
+	PatientTable = "inpatient"
+	// PatientInverseTable is the table name for the Patient entity.
+	// It exists in this package in order to avoid circular dependency with the "patient" package.
+	PatientInverseTable = "patient"
+	// PatientColumn is the table column denoting the patient relation/edge.
+	PatientColumn = "patient_id"
 )
 
 // Columns holds all SQL columns for inpatient fields.
 var Columns = []string{
 	FieldID,
+	FieldPatientID,
+	FieldRegisterDate,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -30,10 +47,39 @@ func ValidColumn(column string) bool {
 	return false
 }
 
+var (
+	// DefaultID holds the default value on creation for the "id" field.
+	DefaultID func() uuid.UUID
+)
+
 // OrderOption defines the ordering options for the Inpatient queries.
 type OrderOption func(*sql.Selector)
 
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByPatientID orders the results by the patient_id field.
+func ByPatientID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPatientID, opts...).ToFunc()
+}
+
+// ByRegisterDate orders the results by the register_date field.
+func ByRegisterDate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRegisterDate, opts...).ToFunc()
+}
+
+// ByPatientField orders the results by patient field.
+func ByPatientField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPatientStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newPatientStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PatientInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, PatientTable, PatientColumn),
+	)
 }

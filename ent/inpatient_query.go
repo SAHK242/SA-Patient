@@ -7,21 +7,24 @@ import (
 	"fmt"
 	"math"
 	"patient/ent/inpatient"
+	"patient/ent/patient"
 	"patient/ent/predicate"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // InpatientQuery is the builder for querying Inpatient entities.
 type InpatientQuery struct {
 	config
-	ctx        *QueryContext
-	order      []inpatient.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Inpatient
+	ctx         *QueryContext
+	order       []inpatient.OrderOption
+	inters      []Interceptor
+	predicates  []predicate.Inpatient
+	withPatient *PatientQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -58,6 +61,28 @@ func (iq *InpatientQuery) Order(o ...inpatient.OrderOption) *InpatientQuery {
 	return iq
 }
 
+// QueryPatient chains the current query on the "patient" edge.
+func (iq *InpatientQuery) QueryPatient() *PatientQuery {
+	query := (&PatientClient{config: iq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := iq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := iq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(inpatient.Table, inpatient.FieldID, selector),
+			sqlgraph.To(patient.Table, patient.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, inpatient.PatientTable, inpatient.PatientColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(iq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Inpatient entity from the query.
 // Returns a *NotFoundError when no Inpatient was found.
 func (iq *InpatientQuery) First(ctx context.Context) (*Inpatient, error) {
@@ -82,8 +107,8 @@ func (iq *InpatientQuery) FirstX(ctx context.Context) *Inpatient {
 
 // FirstID returns the first Inpatient ID from the query.
 // Returns a *NotFoundError when no Inpatient ID was found.
-func (iq *InpatientQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (iq *InpatientQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = iq.Limit(1).IDs(setContextOp(ctx, iq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
@@ -95,7 +120,7 @@ func (iq *InpatientQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (iq *InpatientQuery) FirstIDX(ctx context.Context) int {
+func (iq *InpatientQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := iq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -133,8 +158,8 @@ func (iq *InpatientQuery) OnlyX(ctx context.Context) *Inpatient {
 // OnlyID is like Only, but returns the only Inpatient ID in the query.
 // Returns a *NotSingularError when more than one Inpatient ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (iq *InpatientQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (iq *InpatientQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = iq.Limit(2).IDs(setContextOp(ctx, iq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
@@ -150,7 +175,7 @@ func (iq *InpatientQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (iq *InpatientQuery) OnlyIDX(ctx context.Context) int {
+func (iq *InpatientQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := iq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -178,7 +203,7 @@ func (iq *InpatientQuery) AllX(ctx context.Context) []*Inpatient {
 }
 
 // IDs executes the query and returns a list of Inpatient IDs.
-func (iq *InpatientQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (iq *InpatientQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if iq.ctx.Unique == nil && iq.path != nil {
 		iq.Unique(true)
 	}
@@ -190,7 +215,7 @@ func (iq *InpatientQuery) IDs(ctx context.Context) (ids []int, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (iq *InpatientQuery) IDsX(ctx context.Context) []int {
+func (iq *InpatientQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := iq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -245,19 +270,43 @@ func (iq *InpatientQuery) Clone() *InpatientQuery {
 		return nil
 	}
 	return &InpatientQuery{
-		config:     iq.config,
-		ctx:        iq.ctx.Clone(),
-		order:      append([]inpatient.OrderOption{}, iq.order...),
-		inters:     append([]Interceptor{}, iq.inters...),
-		predicates: append([]predicate.Inpatient{}, iq.predicates...),
+		config:      iq.config,
+		ctx:         iq.ctx.Clone(),
+		order:       append([]inpatient.OrderOption{}, iq.order...),
+		inters:      append([]Interceptor{}, iq.inters...),
+		predicates:  append([]predicate.Inpatient{}, iq.predicates...),
+		withPatient: iq.withPatient.Clone(),
 		// clone intermediate query.
 		sql:  iq.sql.Clone(),
 		path: iq.path,
 	}
 }
 
+// WithPatient tells the query-builder to eager-load the nodes that are connected to
+// the "patient" edge. The optional arguments are used to configure the query builder of the edge.
+func (iq *InpatientQuery) WithPatient(opts ...func(*PatientQuery)) *InpatientQuery {
+	query := (&PatientClient{config: iq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	iq.withPatient = query
+	return iq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
+//
+// Example:
+//
+//	var v []struct {
+//		PatientID uuid.UUID `json:"patient_id,omitempty"`
+//		Count int `json:"count,omitempty"`
+//	}
+//
+//	client.Inpatient.Query().
+//		GroupBy(inpatient.FieldPatientID).
+//		Aggregate(ent.Count()).
+//		Scan(ctx, &v)
 func (iq *InpatientQuery) GroupBy(field string, fields ...string) *InpatientGroupBy {
 	iq.ctx.Fields = append([]string{field}, fields...)
 	grbuild := &InpatientGroupBy{build: iq}
@@ -269,6 +318,16 @@ func (iq *InpatientQuery) GroupBy(field string, fields ...string) *InpatientGrou
 
 // Select allows the selection one or more fields/columns for the given query,
 // instead of selecting all fields in the entity.
+//
+// Example:
+//
+//	var v []struct {
+//		PatientID uuid.UUID `json:"patient_id,omitempty"`
+//	}
+//
+//	client.Inpatient.Query().
+//		Select(inpatient.FieldPatientID).
+//		Scan(ctx, &v)
 func (iq *InpatientQuery) Select(fields ...string) *InpatientSelect {
 	iq.ctx.Fields = append(iq.ctx.Fields, fields...)
 	sbuild := &InpatientSelect{InpatientQuery: iq}
@@ -310,8 +369,11 @@ func (iq *InpatientQuery) prepareQuery(ctx context.Context) error {
 
 func (iq *InpatientQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Inpatient, error) {
 	var (
-		nodes = []*Inpatient{}
-		_spec = iq.querySpec()
+		nodes       = []*Inpatient{}
+		_spec       = iq.querySpec()
+		loadedTypes = [1]bool{
+			iq.withPatient != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Inpatient).scanValues(nil, columns)
@@ -319,6 +381,7 @@ func (iq *InpatientQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*In
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Inpatient{config: iq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	for i := range hooks {
@@ -330,7 +393,43 @@ func (iq *InpatientQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*In
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := iq.withPatient; query != nil {
+		if err := iq.loadPatient(ctx, query, nodes, nil,
+			func(n *Inpatient, e *Patient) { n.Edges.Patient = e }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
+}
+
+func (iq *InpatientQuery) loadPatient(ctx context.Context, query *PatientQuery, nodes []*Inpatient, init func(*Inpatient), assign func(*Inpatient, *Patient)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Inpatient)
+	for i := range nodes {
+		fk := nodes[i].PatientID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(patient.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "patient_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
 }
 
 func (iq *InpatientQuery) sqlCount(ctx context.Context) (int, error) {
@@ -343,7 +442,7 @@ func (iq *InpatientQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (iq *InpatientQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(inpatient.Table, inpatient.Columns, sqlgraph.NewFieldSpec(inpatient.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(inpatient.Table, inpatient.Columns, sqlgraph.NewFieldSpec(inpatient.FieldID, field.TypeUUID))
 	_spec.From = iq.sql
 	if unique := iq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -357,6 +456,9 @@ func (iq *InpatientQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != inpatient.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if iq.withPatient != nil {
+			_spec.Node.AddColumnOnce(inpatient.FieldPatientID)
 		}
 	}
 	if ps := iq.predicates; len(ps) > 0 {

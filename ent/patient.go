@@ -29,8 +29,42 @@ type Patient struct {
 	// Address holds the value of the "address" field.
 	Address string `json:"address,omitempty"`
 	// DateOfBirth holds the value of the "date_of_birth" field.
-	DateOfBirth  time.Time `json:"date_of_birth,omitempty"`
+	DateOfBirth time.Time `json:"date_of_birth,omitempty"`
+	// CurrentPatientType holds the value of the "current_patient_type" field.
+	CurrentPatientType int32 `json:"current_patient_type,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the PatientQuery when eager-loading is set.
+	Edges        PatientEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// PatientEdges holds the relations/edges for other nodes in the graph.
+type PatientEdges struct {
+	// Inpatients holds the value of the inpatients edge.
+	Inpatients []*Inpatient `json:"inpatients,omitempty"`
+	// Outpatients holds the value of the outpatients edge.
+	Outpatients []*Outpatient `json:"outpatients,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [2]bool
+}
+
+// InpatientsOrErr returns the Inpatients value or an error if the edge
+// was not loaded in eager-loading.
+func (e PatientEdges) InpatientsOrErr() ([]*Inpatient, error) {
+	if e.loadedTypes[0] {
+		return e.Inpatients, nil
+	}
+	return nil, &NotLoadedError{edge: "inpatients"}
+}
+
+// OutpatientsOrErr returns the Outpatients value or an error if the edge
+// was not loaded in eager-loading.
+func (e PatientEdges) OutpatientsOrErr() ([]*Outpatient, error) {
+	if e.loadedTypes[1] {
+		return e.Outpatients, nil
+	}
+	return nil, &NotLoadedError{edge: "outpatients"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -38,7 +72,7 @@ func (*Patient) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case patient.FieldGender:
+		case patient.FieldGender, patient.FieldCurrentPatientType:
 			values[i] = new(sql.NullInt64)
 		case patient.FieldPhoneNumber, patient.FieldFirstName, patient.FieldLastName, patient.FieldAddress:
 			values[i] = new(sql.NullString)
@@ -103,6 +137,12 @@ func (pa *Patient) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				pa.DateOfBirth = value.Time
 			}
+		case patient.FieldCurrentPatientType:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field current_patient_type", values[i])
+			} else if value.Valid {
+				pa.CurrentPatientType = int32(value.Int64)
+			}
 		default:
 			pa.selectValues.Set(columns[i], values[i])
 		}
@@ -114,6 +154,16 @@ func (pa *Patient) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (pa *Patient) Value(name string) (ent.Value, error) {
 	return pa.selectValues.Get(name)
+}
+
+// QueryInpatients queries the "inpatients" edge of the Patient entity.
+func (pa *Patient) QueryInpatients() *InpatientQuery {
+	return NewPatientClient(pa.config).QueryInpatients(pa)
+}
+
+// QueryOutpatients queries the "outpatients" edge of the Patient entity.
+func (pa *Patient) QueryOutpatients() *OutpatientQuery {
+	return NewPatientClient(pa.config).QueryOutpatients(pa)
 }
 
 // Update returns a builder for updating this Patient.
@@ -156,6 +206,9 @@ func (pa *Patient) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("date_of_birth=")
 	builder.WriteString(pa.DateOfBirth.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("current_patient_type=")
+	builder.WriteString(fmt.Sprintf("%v", pa.CurrentPatientType))
 	builder.WriteByte(')')
 	return builder.String()
 }

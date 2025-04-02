@@ -5,18 +5,48 @@ package ent
 import (
 	"fmt"
 	"patient/ent/inpatient"
+	"patient/ent/patient"
 	"strings"
+	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 )
 
 // Inpatient is the model entity for the Inpatient schema.
 type Inpatient struct {
-	config
+	config `json:"-"`
 	// ID of the ent.
-	ID           int `json:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty"`
+	// PatientID holds the value of the "patient_id" field.
+	PatientID uuid.UUID `json:"patient_id,omitempty"`
+	// RegisterDate holds the value of the "register_date" field.
+	RegisterDate time.Time `json:"register_date,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the InpatientQuery when eager-loading is set.
+	Edges        InpatientEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// InpatientEdges holds the relations/edges for other nodes in the graph.
+type InpatientEdges struct {
+	// Patient holds the value of the patient edge.
+	Patient *Patient `json:"patient,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// PatientOrErr returns the Patient value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e InpatientEdges) PatientOrErr() (*Patient, error) {
+	if e.Patient != nil {
+		return e.Patient, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: patient.Label}
+	}
+	return nil, &NotLoadedError{edge: "patient"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -24,8 +54,10 @@ func (*Inpatient) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case inpatient.FieldID:
-			values[i] = new(sql.NullInt64)
+		case inpatient.FieldRegisterDate:
+			values[i] = new(sql.NullTime)
+		case inpatient.FieldID, inpatient.FieldPatientID:
+			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -42,11 +74,23 @@ func (i *Inpatient) assignValues(columns []string, values []any) error {
 	for j := range columns {
 		switch columns[j] {
 		case inpatient.FieldID:
-			value, ok := values[j].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[j].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[j])
+			} else if value != nil {
+				i.ID = *value
 			}
-			i.ID = int(value.Int64)
+		case inpatient.FieldPatientID:
+			if value, ok := values[j].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field patient_id", values[j])
+			} else if value != nil {
+				i.PatientID = *value
+			}
+		case inpatient.FieldRegisterDate:
+			if value, ok := values[j].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field register_date", values[j])
+			} else if value.Valid {
+				i.RegisterDate = value.Time
+			}
 		default:
 			i.selectValues.Set(columns[j], values[j])
 		}
@@ -58,6 +102,11 @@ func (i *Inpatient) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (i *Inpatient) Value(name string) (ent.Value, error) {
 	return i.selectValues.Get(name)
+}
+
+// QueryPatient queries the "patient" edge of the Inpatient entity.
+func (i *Inpatient) QueryPatient() *PatientQuery {
+	return NewInpatientClient(i.config).QueryPatient(i)
 }
 
 // Update returns a builder for updating this Inpatient.
@@ -82,7 +131,12 @@ func (i *Inpatient) Unwrap() *Inpatient {
 func (i *Inpatient) String() string {
 	var builder strings.Builder
 	builder.WriteString("Inpatient(")
-	builder.WriteString(fmt.Sprintf("id=%v", i.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", i.ID))
+	builder.WriteString("patient_id=")
+	builder.WriteString(fmt.Sprintf("%v", i.PatientID))
+	builder.WriteString(", ")
+	builder.WriteString("register_date=")
+	builder.WriteString(i.RegisterDate.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

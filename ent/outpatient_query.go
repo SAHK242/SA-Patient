@@ -7,21 +7,24 @@ import (
 	"fmt"
 	"math"
 	"patient/ent/outpatient"
+	"patient/ent/patient"
 	"patient/ent/predicate"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // OutpatientQuery is the builder for querying Outpatient entities.
 type OutpatientQuery struct {
 	config
-	ctx        *QueryContext
-	order      []outpatient.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Outpatient
+	ctx         *QueryContext
+	order       []outpatient.OrderOption
+	inters      []Interceptor
+	predicates  []predicate.Outpatient
+	withPatient *PatientQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -58,6 +61,28 @@ func (oq *OutpatientQuery) Order(o ...outpatient.OrderOption) *OutpatientQuery {
 	return oq
 }
 
+// QueryPatient chains the current query on the "patient" edge.
+func (oq *OutpatientQuery) QueryPatient() *PatientQuery {
+	query := (&PatientClient{config: oq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := oq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := oq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(outpatient.Table, outpatient.FieldID, selector),
+			sqlgraph.To(patient.Table, patient.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, outpatient.PatientTable, outpatient.PatientColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(oq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Outpatient entity from the query.
 // Returns a *NotFoundError when no Outpatient was found.
 func (oq *OutpatientQuery) First(ctx context.Context) (*Outpatient, error) {
@@ -82,8 +107,8 @@ func (oq *OutpatientQuery) FirstX(ctx context.Context) *Outpatient {
 
 // FirstID returns the first Outpatient ID from the query.
 // Returns a *NotFoundError when no Outpatient ID was found.
-func (oq *OutpatientQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (oq *OutpatientQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = oq.Limit(1).IDs(setContextOp(ctx, oq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
@@ -95,7 +120,7 @@ func (oq *OutpatientQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (oq *OutpatientQuery) FirstIDX(ctx context.Context) int {
+func (oq *OutpatientQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := oq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -133,8 +158,8 @@ func (oq *OutpatientQuery) OnlyX(ctx context.Context) *Outpatient {
 // OnlyID is like Only, but returns the only Outpatient ID in the query.
 // Returns a *NotSingularError when more than one Outpatient ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (oq *OutpatientQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (oq *OutpatientQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = oq.Limit(2).IDs(setContextOp(ctx, oq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
@@ -150,7 +175,7 @@ func (oq *OutpatientQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (oq *OutpatientQuery) OnlyIDX(ctx context.Context) int {
+func (oq *OutpatientQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := oq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -178,7 +203,7 @@ func (oq *OutpatientQuery) AllX(ctx context.Context) []*Outpatient {
 }
 
 // IDs executes the query and returns a list of Outpatient IDs.
-func (oq *OutpatientQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (oq *OutpatientQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if oq.ctx.Unique == nil && oq.path != nil {
 		oq.Unique(true)
 	}
@@ -190,7 +215,7 @@ func (oq *OutpatientQuery) IDs(ctx context.Context) (ids []int, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (oq *OutpatientQuery) IDsX(ctx context.Context) []int {
+func (oq *OutpatientQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := oq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -245,19 +270,43 @@ func (oq *OutpatientQuery) Clone() *OutpatientQuery {
 		return nil
 	}
 	return &OutpatientQuery{
-		config:     oq.config,
-		ctx:        oq.ctx.Clone(),
-		order:      append([]outpatient.OrderOption{}, oq.order...),
-		inters:     append([]Interceptor{}, oq.inters...),
-		predicates: append([]predicate.Outpatient{}, oq.predicates...),
+		config:      oq.config,
+		ctx:         oq.ctx.Clone(),
+		order:       append([]outpatient.OrderOption{}, oq.order...),
+		inters:      append([]Interceptor{}, oq.inters...),
+		predicates:  append([]predicate.Outpatient{}, oq.predicates...),
+		withPatient: oq.withPatient.Clone(),
 		// clone intermediate query.
 		sql:  oq.sql.Clone(),
 		path: oq.path,
 	}
 }
 
+// WithPatient tells the query-builder to eager-load the nodes that are connected to
+// the "patient" edge. The optional arguments are used to configure the query builder of the edge.
+func (oq *OutpatientQuery) WithPatient(opts ...func(*PatientQuery)) *OutpatientQuery {
+	query := (&PatientClient{config: oq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	oq.withPatient = query
+	return oq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
+//
+// Example:
+//
+//	var v []struct {
+//		PatientID uuid.UUID `json:"patient_id,omitempty"`
+//		Count int `json:"count,omitempty"`
+//	}
+//
+//	client.Outpatient.Query().
+//		GroupBy(outpatient.FieldPatientID).
+//		Aggregate(ent.Count()).
+//		Scan(ctx, &v)
 func (oq *OutpatientQuery) GroupBy(field string, fields ...string) *OutpatientGroupBy {
 	oq.ctx.Fields = append([]string{field}, fields...)
 	grbuild := &OutpatientGroupBy{build: oq}
@@ -269,6 +318,16 @@ func (oq *OutpatientQuery) GroupBy(field string, fields ...string) *OutpatientGr
 
 // Select allows the selection one or more fields/columns for the given query,
 // instead of selecting all fields in the entity.
+//
+// Example:
+//
+//	var v []struct {
+//		PatientID uuid.UUID `json:"patient_id,omitempty"`
+//	}
+//
+//	client.Outpatient.Query().
+//		Select(outpatient.FieldPatientID).
+//		Scan(ctx, &v)
 func (oq *OutpatientQuery) Select(fields ...string) *OutpatientSelect {
 	oq.ctx.Fields = append(oq.ctx.Fields, fields...)
 	sbuild := &OutpatientSelect{OutpatientQuery: oq}
@@ -310,8 +369,11 @@ func (oq *OutpatientQuery) prepareQuery(ctx context.Context) error {
 
 func (oq *OutpatientQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Outpatient, error) {
 	var (
-		nodes = []*Outpatient{}
-		_spec = oq.querySpec()
+		nodes       = []*Outpatient{}
+		_spec       = oq.querySpec()
+		loadedTypes = [1]bool{
+			oq.withPatient != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Outpatient).scanValues(nil, columns)
@@ -319,6 +381,7 @@ func (oq *OutpatientQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*O
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Outpatient{config: oq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	for i := range hooks {
@@ -330,7 +393,43 @@ func (oq *OutpatientQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*O
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := oq.withPatient; query != nil {
+		if err := oq.loadPatient(ctx, query, nodes, nil,
+			func(n *Outpatient, e *Patient) { n.Edges.Patient = e }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
+}
+
+func (oq *OutpatientQuery) loadPatient(ctx context.Context, query *PatientQuery, nodes []*Outpatient, init func(*Outpatient), assign func(*Outpatient, *Patient)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Outpatient)
+	for i := range nodes {
+		fk := nodes[i].PatientID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(patient.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "patient_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
 }
 
 func (oq *OutpatientQuery) sqlCount(ctx context.Context) (int, error) {
@@ -343,7 +442,7 @@ func (oq *OutpatientQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (oq *OutpatientQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(outpatient.Table, outpatient.Columns, sqlgraph.NewFieldSpec(outpatient.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(outpatient.Table, outpatient.Columns, sqlgraph.NewFieldSpec(outpatient.FieldID, field.TypeUUID))
 	_spec.From = oq.sql
 	if unique := oq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -357,6 +456,9 @@ func (oq *OutpatientQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != outpatient.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if oq.withPatient != nil {
+			_spec.Node.AddColumnOnce(outpatient.FieldPatientID)
 		}
 	}
 	if ps := oq.predicates; len(ps) > 0 {
