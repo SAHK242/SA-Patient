@@ -8,10 +8,13 @@ import (
 	"fmt"
 	"patient/ent/medication"
 	"patient/ent/predicate"
+	"patient/ent/prescriptionmedication"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // MedicationUpdate is the builder for updating Medication entities.
@@ -27,13 +30,182 @@ func (mu *MedicationUpdate) Where(ps ...predicate.Medication) *MedicationUpdate 
 	return mu
 }
 
+// SetName sets the "name" field.
+func (mu *MedicationUpdate) SetName(s string) *MedicationUpdate {
+	mu.mutation.SetName(s)
+	return mu
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (mu *MedicationUpdate) SetNillableName(s *string) *MedicationUpdate {
+	if s != nil {
+		mu.SetName(*s)
+	}
+	return mu
+}
+
+// SetEffects sets the "effects" field.
+func (mu *MedicationUpdate) SetEffects(s string) *MedicationUpdate {
+	mu.mutation.SetEffects(s)
+	return mu
+}
+
+// SetNillableEffects sets the "effects" field if the given value is not nil.
+func (mu *MedicationUpdate) SetNillableEffects(s *string) *MedicationUpdate {
+	if s != nil {
+		mu.SetEffects(*s)
+	}
+	return mu
+}
+
+// SetExpiredDate sets the "expired_date" field.
+func (mu *MedicationUpdate) SetExpiredDate(t time.Time) *MedicationUpdate {
+	mu.mutation.SetExpiredDate(t)
+	return mu
+}
+
+// SetNillableExpiredDate sets the "expired_date" field if the given value is not nil.
+func (mu *MedicationUpdate) SetNillableExpiredDate(t *time.Time) *MedicationUpdate {
+	if t != nil {
+		mu.SetExpiredDate(*t)
+	}
+	return mu
+}
+
+// SetQuantity sets the "quantity" field.
+func (mu *MedicationUpdate) SetQuantity(i int64) *MedicationUpdate {
+	mu.mutation.ResetQuantity()
+	mu.mutation.SetQuantity(i)
+	return mu
+}
+
+// SetNillableQuantity sets the "quantity" field if the given value is not nil.
+func (mu *MedicationUpdate) SetNillableQuantity(i *int64) *MedicationUpdate {
+	if i != nil {
+		mu.SetQuantity(*i)
+	}
+	return mu
+}
+
+// AddQuantity adds i to the "quantity" field.
+func (mu *MedicationUpdate) AddQuantity(i int64) *MedicationUpdate {
+	mu.mutation.AddQuantity(i)
+	return mu
+}
+
+// SetPrice sets the "price" field.
+func (mu *MedicationUpdate) SetPrice(f float64) *MedicationUpdate {
+	mu.mutation.ResetPrice()
+	mu.mutation.SetPrice(f)
+	return mu
+}
+
+// SetNillablePrice sets the "price" field if the given value is not nil.
+func (mu *MedicationUpdate) SetNillablePrice(f *float64) *MedicationUpdate {
+	if f != nil {
+		mu.SetPrice(*f)
+	}
+	return mu
+}
+
+// AddPrice adds f to the "price" field.
+func (mu *MedicationUpdate) AddPrice(f float64) *MedicationUpdate {
+	mu.mutation.AddPrice(f)
+	return mu
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (mu *MedicationUpdate) SetCreatedBy(u uuid.UUID) *MedicationUpdate {
+	mu.mutation.SetCreatedBy(u)
+	return mu
+}
+
+// SetNillableCreatedBy sets the "created_by" field if the given value is not nil.
+func (mu *MedicationUpdate) SetNillableCreatedBy(u *uuid.UUID) *MedicationUpdate {
+	if u != nil {
+		mu.SetCreatedBy(*u)
+	}
+	return mu
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (mu *MedicationUpdate) SetUpdatedBy(u uuid.UUID) *MedicationUpdate {
+	mu.mutation.SetUpdatedBy(u)
+	return mu
+}
+
+// SetNillableUpdatedBy sets the "updated_by" field if the given value is not nil.
+func (mu *MedicationUpdate) SetNillableUpdatedBy(u *uuid.UUID) *MedicationUpdate {
+	if u != nil {
+		mu.SetUpdatedBy(*u)
+	}
+	return mu
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (mu *MedicationUpdate) SetCreatedAt(t time.Time) *MedicationUpdate {
+	mu.mutation.SetCreatedAt(t)
+	return mu
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (mu *MedicationUpdate) SetNillableCreatedAt(t *time.Time) *MedicationUpdate {
+	if t != nil {
+		mu.SetCreatedAt(*t)
+	}
+	return mu
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (mu *MedicationUpdate) SetUpdatedAt(t time.Time) *MedicationUpdate {
+	mu.mutation.SetUpdatedAt(t)
+	return mu
+}
+
+// AddPrescriptionMedicationIDs adds the "prescription_medication" edge to the PrescriptionMedication entity by IDs.
+func (mu *MedicationUpdate) AddPrescriptionMedicationIDs(ids ...uuid.UUID) *MedicationUpdate {
+	mu.mutation.AddPrescriptionMedicationIDs(ids...)
+	return mu
+}
+
+// AddPrescriptionMedication adds the "prescription_medication" edges to the PrescriptionMedication entity.
+func (mu *MedicationUpdate) AddPrescriptionMedication(p ...*PrescriptionMedication) *MedicationUpdate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return mu.AddPrescriptionMedicationIDs(ids...)
+}
+
 // Mutation returns the MedicationMutation object of the builder.
 func (mu *MedicationUpdate) Mutation() *MedicationMutation {
 	return mu.mutation
 }
 
+// ClearPrescriptionMedication clears all "prescription_medication" edges to the PrescriptionMedication entity.
+func (mu *MedicationUpdate) ClearPrescriptionMedication() *MedicationUpdate {
+	mu.mutation.ClearPrescriptionMedication()
+	return mu
+}
+
+// RemovePrescriptionMedicationIDs removes the "prescription_medication" edge to PrescriptionMedication entities by IDs.
+func (mu *MedicationUpdate) RemovePrescriptionMedicationIDs(ids ...uuid.UUID) *MedicationUpdate {
+	mu.mutation.RemovePrescriptionMedicationIDs(ids...)
+	return mu
+}
+
+// RemovePrescriptionMedication removes "prescription_medication" edges to PrescriptionMedication entities.
+func (mu *MedicationUpdate) RemovePrescriptionMedication(p ...*PrescriptionMedication) *MedicationUpdate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return mu.RemovePrescriptionMedicationIDs(ids...)
+}
+
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (mu *MedicationUpdate) Save(ctx context.Context) (int, error) {
+	mu.defaults()
 	return withHooks(ctx, mu.sqlSave, mu.mutation, mu.hooks)
 }
 
@@ -59,14 +231,113 @@ func (mu *MedicationUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (mu *MedicationUpdate) defaults() {
+	if _, ok := mu.mutation.UpdatedAt(); !ok {
+		v := medication.UpdateDefaultUpdatedAt()
+		mu.mutation.SetUpdatedAt(v)
+	}
+}
+
+// check runs all checks and user-defined validators on the builder.
+func (mu *MedicationUpdate) check() error {
+	if v, ok := mu.mutation.Name(); ok {
+		if err := medication.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Medication.name": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (mu *MedicationUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := sqlgraph.NewUpdateSpec(medication.Table, medication.Columns, sqlgraph.NewFieldSpec(medication.FieldID, field.TypeInt))
+	if err := mu.check(); err != nil {
+		return n, err
+	}
+	_spec := sqlgraph.NewUpdateSpec(medication.Table, medication.Columns, sqlgraph.NewFieldSpec(medication.FieldID, field.TypeUUID))
 	if ps := mu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := mu.mutation.Name(); ok {
+		_spec.SetField(medication.FieldName, field.TypeString, value)
+	}
+	if value, ok := mu.mutation.Effects(); ok {
+		_spec.SetField(medication.FieldEffects, field.TypeString, value)
+	}
+	if value, ok := mu.mutation.ExpiredDate(); ok {
+		_spec.SetField(medication.FieldExpiredDate, field.TypeTime, value)
+	}
+	if value, ok := mu.mutation.Quantity(); ok {
+		_spec.SetField(medication.FieldQuantity, field.TypeInt64, value)
+	}
+	if value, ok := mu.mutation.AddedQuantity(); ok {
+		_spec.AddField(medication.FieldQuantity, field.TypeInt64, value)
+	}
+	if value, ok := mu.mutation.Price(); ok {
+		_spec.SetField(medication.FieldPrice, field.TypeFloat64, value)
+	}
+	if value, ok := mu.mutation.AddedPrice(); ok {
+		_spec.AddField(medication.FieldPrice, field.TypeFloat64, value)
+	}
+	if value, ok := mu.mutation.CreatedBy(); ok {
+		_spec.SetField(medication.FieldCreatedBy, field.TypeUUID, value)
+	}
+	if value, ok := mu.mutation.UpdatedBy(); ok {
+		_spec.SetField(medication.FieldUpdatedBy, field.TypeUUID, value)
+	}
+	if value, ok := mu.mutation.CreatedAt(); ok {
+		_spec.SetField(medication.FieldCreatedAt, field.TypeTime, value)
+	}
+	if value, ok := mu.mutation.UpdatedAt(); ok {
+		_spec.SetField(medication.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if mu.mutation.PrescriptionMedicationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   medication.PrescriptionMedicationTable,
+			Columns: []string{medication.PrescriptionMedicationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(prescriptionmedication.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := mu.mutation.RemovedPrescriptionMedicationIDs(); len(nodes) > 0 && !mu.mutation.PrescriptionMedicationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   medication.PrescriptionMedicationTable,
+			Columns: []string{medication.PrescriptionMedicationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(prescriptionmedication.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := mu.mutation.PrescriptionMedicationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   medication.PrescriptionMedicationTable,
+			Columns: []string{medication.PrescriptionMedicationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(prescriptionmedication.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, mu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -88,9 +359,177 @@ type MedicationUpdateOne struct {
 	mutation *MedicationMutation
 }
 
+// SetName sets the "name" field.
+func (muo *MedicationUpdateOne) SetName(s string) *MedicationUpdateOne {
+	muo.mutation.SetName(s)
+	return muo
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (muo *MedicationUpdateOne) SetNillableName(s *string) *MedicationUpdateOne {
+	if s != nil {
+		muo.SetName(*s)
+	}
+	return muo
+}
+
+// SetEffects sets the "effects" field.
+func (muo *MedicationUpdateOne) SetEffects(s string) *MedicationUpdateOne {
+	muo.mutation.SetEffects(s)
+	return muo
+}
+
+// SetNillableEffects sets the "effects" field if the given value is not nil.
+func (muo *MedicationUpdateOne) SetNillableEffects(s *string) *MedicationUpdateOne {
+	if s != nil {
+		muo.SetEffects(*s)
+	}
+	return muo
+}
+
+// SetExpiredDate sets the "expired_date" field.
+func (muo *MedicationUpdateOne) SetExpiredDate(t time.Time) *MedicationUpdateOne {
+	muo.mutation.SetExpiredDate(t)
+	return muo
+}
+
+// SetNillableExpiredDate sets the "expired_date" field if the given value is not nil.
+func (muo *MedicationUpdateOne) SetNillableExpiredDate(t *time.Time) *MedicationUpdateOne {
+	if t != nil {
+		muo.SetExpiredDate(*t)
+	}
+	return muo
+}
+
+// SetQuantity sets the "quantity" field.
+func (muo *MedicationUpdateOne) SetQuantity(i int64) *MedicationUpdateOne {
+	muo.mutation.ResetQuantity()
+	muo.mutation.SetQuantity(i)
+	return muo
+}
+
+// SetNillableQuantity sets the "quantity" field if the given value is not nil.
+func (muo *MedicationUpdateOne) SetNillableQuantity(i *int64) *MedicationUpdateOne {
+	if i != nil {
+		muo.SetQuantity(*i)
+	}
+	return muo
+}
+
+// AddQuantity adds i to the "quantity" field.
+func (muo *MedicationUpdateOne) AddQuantity(i int64) *MedicationUpdateOne {
+	muo.mutation.AddQuantity(i)
+	return muo
+}
+
+// SetPrice sets the "price" field.
+func (muo *MedicationUpdateOne) SetPrice(f float64) *MedicationUpdateOne {
+	muo.mutation.ResetPrice()
+	muo.mutation.SetPrice(f)
+	return muo
+}
+
+// SetNillablePrice sets the "price" field if the given value is not nil.
+func (muo *MedicationUpdateOne) SetNillablePrice(f *float64) *MedicationUpdateOne {
+	if f != nil {
+		muo.SetPrice(*f)
+	}
+	return muo
+}
+
+// AddPrice adds f to the "price" field.
+func (muo *MedicationUpdateOne) AddPrice(f float64) *MedicationUpdateOne {
+	muo.mutation.AddPrice(f)
+	return muo
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (muo *MedicationUpdateOne) SetCreatedBy(u uuid.UUID) *MedicationUpdateOne {
+	muo.mutation.SetCreatedBy(u)
+	return muo
+}
+
+// SetNillableCreatedBy sets the "created_by" field if the given value is not nil.
+func (muo *MedicationUpdateOne) SetNillableCreatedBy(u *uuid.UUID) *MedicationUpdateOne {
+	if u != nil {
+		muo.SetCreatedBy(*u)
+	}
+	return muo
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (muo *MedicationUpdateOne) SetUpdatedBy(u uuid.UUID) *MedicationUpdateOne {
+	muo.mutation.SetUpdatedBy(u)
+	return muo
+}
+
+// SetNillableUpdatedBy sets the "updated_by" field if the given value is not nil.
+func (muo *MedicationUpdateOne) SetNillableUpdatedBy(u *uuid.UUID) *MedicationUpdateOne {
+	if u != nil {
+		muo.SetUpdatedBy(*u)
+	}
+	return muo
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (muo *MedicationUpdateOne) SetCreatedAt(t time.Time) *MedicationUpdateOne {
+	muo.mutation.SetCreatedAt(t)
+	return muo
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (muo *MedicationUpdateOne) SetNillableCreatedAt(t *time.Time) *MedicationUpdateOne {
+	if t != nil {
+		muo.SetCreatedAt(*t)
+	}
+	return muo
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (muo *MedicationUpdateOne) SetUpdatedAt(t time.Time) *MedicationUpdateOne {
+	muo.mutation.SetUpdatedAt(t)
+	return muo
+}
+
+// AddPrescriptionMedicationIDs adds the "prescription_medication" edge to the PrescriptionMedication entity by IDs.
+func (muo *MedicationUpdateOne) AddPrescriptionMedicationIDs(ids ...uuid.UUID) *MedicationUpdateOne {
+	muo.mutation.AddPrescriptionMedicationIDs(ids...)
+	return muo
+}
+
+// AddPrescriptionMedication adds the "prescription_medication" edges to the PrescriptionMedication entity.
+func (muo *MedicationUpdateOne) AddPrescriptionMedication(p ...*PrescriptionMedication) *MedicationUpdateOne {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return muo.AddPrescriptionMedicationIDs(ids...)
+}
+
 // Mutation returns the MedicationMutation object of the builder.
 func (muo *MedicationUpdateOne) Mutation() *MedicationMutation {
 	return muo.mutation
+}
+
+// ClearPrescriptionMedication clears all "prescription_medication" edges to the PrescriptionMedication entity.
+func (muo *MedicationUpdateOne) ClearPrescriptionMedication() *MedicationUpdateOne {
+	muo.mutation.ClearPrescriptionMedication()
+	return muo
+}
+
+// RemovePrescriptionMedicationIDs removes the "prescription_medication" edge to PrescriptionMedication entities by IDs.
+func (muo *MedicationUpdateOne) RemovePrescriptionMedicationIDs(ids ...uuid.UUID) *MedicationUpdateOne {
+	muo.mutation.RemovePrescriptionMedicationIDs(ids...)
+	return muo
+}
+
+// RemovePrescriptionMedication removes "prescription_medication" edges to PrescriptionMedication entities.
+func (muo *MedicationUpdateOne) RemovePrescriptionMedication(p ...*PrescriptionMedication) *MedicationUpdateOne {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return muo.RemovePrescriptionMedicationIDs(ids...)
 }
 
 // Where appends a list predicates to the MedicationUpdate builder.
@@ -108,6 +547,7 @@ func (muo *MedicationUpdateOne) Select(field string, fields ...string) *Medicati
 
 // Save executes the query and returns the updated Medication entity.
 func (muo *MedicationUpdateOne) Save(ctx context.Context) (*Medication, error) {
+	muo.defaults()
 	return withHooks(ctx, muo.sqlSave, muo.mutation, muo.hooks)
 }
 
@@ -133,8 +573,29 @@ func (muo *MedicationUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (muo *MedicationUpdateOne) defaults() {
+	if _, ok := muo.mutation.UpdatedAt(); !ok {
+		v := medication.UpdateDefaultUpdatedAt()
+		muo.mutation.SetUpdatedAt(v)
+	}
+}
+
+// check runs all checks and user-defined validators on the builder.
+func (muo *MedicationUpdateOne) check() error {
+	if v, ok := muo.mutation.Name(); ok {
+		if err := medication.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Medication.name": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (muo *MedicationUpdateOne) sqlSave(ctx context.Context) (_node *Medication, err error) {
-	_spec := sqlgraph.NewUpdateSpec(medication.Table, medication.Columns, sqlgraph.NewFieldSpec(medication.FieldID, field.TypeInt))
+	if err := muo.check(); err != nil {
+		return _node, err
+	}
+	_spec := sqlgraph.NewUpdateSpec(medication.Table, medication.Columns, sqlgraph.NewFieldSpec(medication.FieldID, field.TypeUUID))
 	id, ok := muo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Medication.id" for update`)}
@@ -158,6 +619,84 @@ func (muo *MedicationUpdateOne) sqlSave(ctx context.Context) (_node *Medication,
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := muo.mutation.Name(); ok {
+		_spec.SetField(medication.FieldName, field.TypeString, value)
+	}
+	if value, ok := muo.mutation.Effects(); ok {
+		_spec.SetField(medication.FieldEffects, field.TypeString, value)
+	}
+	if value, ok := muo.mutation.ExpiredDate(); ok {
+		_spec.SetField(medication.FieldExpiredDate, field.TypeTime, value)
+	}
+	if value, ok := muo.mutation.Quantity(); ok {
+		_spec.SetField(medication.FieldQuantity, field.TypeInt64, value)
+	}
+	if value, ok := muo.mutation.AddedQuantity(); ok {
+		_spec.AddField(medication.FieldQuantity, field.TypeInt64, value)
+	}
+	if value, ok := muo.mutation.Price(); ok {
+		_spec.SetField(medication.FieldPrice, field.TypeFloat64, value)
+	}
+	if value, ok := muo.mutation.AddedPrice(); ok {
+		_spec.AddField(medication.FieldPrice, field.TypeFloat64, value)
+	}
+	if value, ok := muo.mutation.CreatedBy(); ok {
+		_spec.SetField(medication.FieldCreatedBy, field.TypeUUID, value)
+	}
+	if value, ok := muo.mutation.UpdatedBy(); ok {
+		_spec.SetField(medication.FieldUpdatedBy, field.TypeUUID, value)
+	}
+	if value, ok := muo.mutation.CreatedAt(); ok {
+		_spec.SetField(medication.FieldCreatedAt, field.TypeTime, value)
+	}
+	if value, ok := muo.mutation.UpdatedAt(); ok {
+		_spec.SetField(medication.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if muo.mutation.PrescriptionMedicationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   medication.PrescriptionMedicationTable,
+			Columns: []string{medication.PrescriptionMedicationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(prescriptionmedication.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := muo.mutation.RemovedPrescriptionMedicationIDs(); len(nodes) > 0 && !muo.mutation.PrescriptionMedicationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   medication.PrescriptionMedicationTable,
+			Columns: []string{medication.PrescriptionMedicationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(prescriptionmedication.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := muo.mutation.PrescriptionMedicationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   medication.PrescriptionMedicationTable,
+			Columns: []string{medication.PrescriptionMedicationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(prescriptionmedication.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Medication{config: muo.config}
 	_spec.Assign = _node.assignValues

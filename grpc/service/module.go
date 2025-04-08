@@ -11,6 +11,7 @@ import (
 
 var Module = fx.Provide(
 	NewPatientGrpcService,
+	NewMedicationGrpcService,
 )
 
 func rollback(tx *ent.Tx, err error) error {

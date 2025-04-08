@@ -6,18 +6,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"patient/ent/examinedetail"
-	"patient/ent/examinemedication"
-	"patient/ent/inpatient"
-	"patient/ent/inpatientdetail"
-	"patient/ent/invoice"
+	"patient/ent/medicalhistories"
+	"patient/ent/medicalprescription"
+	"patient/ent/medicalsurgery"
+	"patient/ent/medicaltreatment"
 	"patient/ent/medication"
-	"patient/ent/medicationeffect"
-	"patient/ent/outpatient"
-	"patient/ent/outpatientdetail"
 	"patient/ent/patient"
-	"patient/ent/treatdetail"
-	"patient/ent/treatmedication"
+	"patient/ent/prescriptionmedication"
 	"reflect"
 	"sync"
 
@@ -84,18 +79,13 @@ var (
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			examinedetail.Table:     examinedetail.ValidColumn,
-			examinemedication.Table: examinemedication.ValidColumn,
-			inpatient.Table:         inpatient.ValidColumn,
-			inpatientdetail.Table:   inpatientdetail.ValidColumn,
-			invoice.Table:           invoice.ValidColumn,
-			medication.Table:        medication.ValidColumn,
-			medicationeffect.Table:  medicationeffect.ValidColumn,
-			outpatient.Table:        outpatient.ValidColumn,
-			outpatientdetail.Table:  outpatientdetail.ValidColumn,
-			patient.Table:           patient.ValidColumn,
-			treatdetail.Table:       treatdetail.ValidColumn,
-			treatmedication.Table:   treatmedication.ValidColumn,
+			medicalhistories.Table:       medicalhistories.ValidColumn,
+			medicalprescription.Table:    medicalprescription.ValidColumn,
+			medicalsurgery.Table:         medicalsurgery.ValidColumn,
+			medicaltreatment.Table:       medicaltreatment.ValidColumn,
+			medication.Table:             medication.ValidColumn,
+			patient.Table:                patient.ValidColumn,
+			prescriptionmedication.Table: prescriptionmedication.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

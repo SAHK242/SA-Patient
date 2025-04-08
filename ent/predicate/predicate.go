@@ -6,38 +6,23 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
-// ExamineDetail is the predicate function for examinedetail builders.
-type ExamineDetail func(*sql.Selector)
+// MedicalHistories is the predicate function for medicalhistories builders.
+type MedicalHistories func(*sql.Selector)
 
-// ExamineMedication is the predicate function for examinemedication builders.
-type ExamineMedication func(*sql.Selector)
+// MedicalPrescription is the predicate function for medicalprescription builders.
+type MedicalPrescription func(*sql.Selector)
 
-// Inpatient is the predicate function for inpatient builders.
-type Inpatient func(*sql.Selector)
+// MedicalSurgery is the predicate function for medicalsurgery builders.
+type MedicalSurgery func(*sql.Selector)
 
-// InpatientDetail is the predicate function for inpatientdetail builders.
-type InpatientDetail func(*sql.Selector)
-
-// Invoice is the predicate function for invoice builders.
-type Invoice func(*sql.Selector)
+// MedicalTreatment is the predicate function for medicaltreatment builders.
+type MedicalTreatment func(*sql.Selector)
 
 // Medication is the predicate function for medication builders.
 type Medication func(*sql.Selector)
 
-// MedicationEffect is the predicate function for medicationeffect builders.
-type MedicationEffect func(*sql.Selector)
-
-// Outpatient is the predicate function for outpatient builders.
-type Outpatient func(*sql.Selector)
-
-// OutpatientDetail is the predicate function for outpatientdetail builders.
-type OutpatientDetail func(*sql.Selector)
-
 // Patient is the predicate function for patient builders.
 type Patient func(*sql.Selector)
 
-// TreatDetail is the predicate function for treatdetail builders.
-type TreatDetail func(*sql.Selector)
-
-// TreatMedication is the predicate function for treatmedication builders.
-type TreatMedication func(*sql.Selector)
+// PrescriptionMedication is the predicate function for prescriptionmedication builders.
+type PrescriptionMedication func(*sql.Selector)

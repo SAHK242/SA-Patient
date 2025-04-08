@@ -30,6 +30,11 @@ var Module = fx.Provide(
 	NewEntClient,
 	NewNativeClient,
 	NewPatientRepository,
+	NewMedicationRepository,
+	NewMedicalHistoriesRepository,
+	NewMedicalSurgeryRepository,
+	NewMedicalTreatmentRepository,
+	NewMedicalPrescriptionRepository,
 )
 
 func NewDatasource(config config.Config) *Datasource {

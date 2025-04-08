@@ -6,4 +6,5 @@ import (
 
 var Module = fx.Provide(
 	NewPatientGrpcController,
+	NewMedicationGrpcController,
 )

@@ -9,126 +9,155 @@ import (
 )
 
 var (
-	// ExamineDetailsColumns holds the columns for the "examine_details" table.
-	ExamineDetailsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-	}
-	// ExamineDetailsTable holds the schema information for the "examine_details" table.
-	ExamineDetailsTable = &schema.Table{
-		Name:       "examine_details",
-		Columns:    ExamineDetailsColumns,
-		PrimaryKey: []*schema.Column{ExamineDetailsColumns[0]},
-	}
-	// ExamineMedicationsColumns holds the columns for the "examine_medications" table.
-	ExamineMedicationsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-	}
-	// ExamineMedicationsTable holds the schema information for the "examine_medications" table.
-	ExamineMedicationsTable = &schema.Table{
-		Name:       "examine_medications",
-		Columns:    ExamineMedicationsColumns,
-		PrimaryKey: []*schema.Column{ExamineMedicationsColumns[0]},
-	}
-	// InpatientColumns holds the columns for the "inpatient" table.
-	InpatientColumns = []*schema.Column{
+	// MedicalHistoriesColumns holds the columns for the "medical_histories" table.
+	MedicalHistoriesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "register_date", Type: field.TypeTime},
+		{Name: "reason", Type: field.TypeString},
+		{Name: "diagnosis", Type: field.TypeString},
+		{Name: "has_treatment", Type: field.TypeBool, Default: false},
+		{Name: "has_surgery", Type: field.TypeBool, Default: false},
+		{Name: "has_prescription", Type: field.TypeBool, Default: false},
+		{Name: "doctor_notes", Type: field.TypeString, Nullable: true},
+		{Name: "medical_end_date", Type: field.TypeTime, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_by", Type: field.TypeUUID},
+		{Name: "updated_by", Type: field.TypeUUID},
 		{Name: "patient_id", Type: field.TypeUUID},
 	}
-	// InpatientTable holds the schema information for the "inpatient" table.
-	InpatientTable = &schema.Table{
-		Name:       "inpatient",
-		Columns:    InpatientColumns,
-		PrimaryKey: []*schema.Column{InpatientColumns[0]},
+	// MedicalHistoriesTable holds the schema information for the "medical_histories" table.
+	MedicalHistoriesTable = &schema.Table{
+		Name:       "medical_histories",
+		Columns:    MedicalHistoriesColumns,
+		PrimaryKey: []*schema.Column{MedicalHistoriesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "inpatient_patient_inpatients",
-				Columns:    []*schema.Column{InpatientColumns[2]},
+				Symbol:     "medical_histories_patient_medical_history",
+				Columns:    []*schema.Column{MedicalHistoriesColumns[12]},
 				RefColumns: []*schema.Column{PatientColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 		},
 	}
-	// InpatientDetailsColumns holds the columns for the "inpatient_details" table.
-	InpatientDetailsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-	}
-	// InpatientDetailsTable holds the schema information for the "inpatient_details" table.
-	InpatientDetailsTable = &schema.Table{
-		Name:       "inpatient_details",
-		Columns:    InpatientDetailsColumns,
-		PrimaryKey: []*schema.Column{InpatientDetailsColumns[0]},
-	}
-	// InvoicesColumns holds the columns for the "invoices" table.
-	InvoicesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-	}
-	// InvoicesTable holds the schema information for the "invoices" table.
-	InvoicesTable = &schema.Table{
-		Name:       "invoices",
-		Columns:    InvoicesColumns,
-		PrimaryKey: []*schema.Column{InvoicesColumns[0]},
-	}
-	// MedicationsColumns holds the columns for the "medications" table.
-	MedicationsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-	}
-	// MedicationsTable holds the schema information for the "medications" table.
-	MedicationsTable = &schema.Table{
-		Name:       "medications",
-		Columns:    MedicationsColumns,
-		PrimaryKey: []*schema.Column{MedicationsColumns[0]},
-	}
-	// MedicationEffectsColumns holds the columns for the "medication_effects" table.
-	MedicationEffectsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-	}
-	// MedicationEffectsTable holds the schema information for the "medication_effects" table.
-	MedicationEffectsTable = &schema.Table{
-		Name:       "medication_effects",
-		Columns:    MedicationEffectsColumns,
-		PrimaryKey: []*schema.Column{MedicationEffectsColumns[0]},
-	}
-	// OutpatientColumns holds the columns for the "outpatient" table.
-	OutpatientColumns = []*schema.Column{
+	// MedicalPrescriptionColumns holds the columns for the "medical_prescription" table.
+	MedicalPrescriptionColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "register_date", Type: field.TypeTime},
-		{Name: "patient_id", Type: field.TypeUUID},
+		{Name: "prescription_date", Type: field.TypeTime},
+		{Name: "fee", Type: field.TypeFloat64, Default: 0},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "created_by", Type: field.TypeUUID},
+		{Name: "medical_history_id", Type: field.TypeUUID},
 	}
-	// OutpatientTable holds the schema information for the "outpatient" table.
-	OutpatientTable = &schema.Table{
-		Name:       "outpatient",
-		Columns:    OutpatientColumns,
-		PrimaryKey: []*schema.Column{OutpatientColumns[0]},
+	// MedicalPrescriptionTable holds the schema information for the "medical_prescription" table.
+	MedicalPrescriptionTable = &schema.Table{
+		Name:       "medical_prescription",
+		Columns:    MedicalPrescriptionColumns,
+		PrimaryKey: []*schema.Column{MedicalPrescriptionColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "outpatient_patient_outpatients",
-				Columns:    []*schema.Column{OutpatientColumns[2]},
-				RefColumns: []*schema.Column{PatientColumns[0]},
+				Symbol:     "medical_prescription_medical_histories_medical_prescription",
+				Columns:    []*schema.Column{MedicalPrescriptionColumns[5]},
+				RefColumns: []*schema.Column{MedicalHistoriesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 		},
 	}
-	// OutpatientDetailsColumns holds the columns for the "outpatient_details" table.
-	OutpatientDetailsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+	// MedicalSurgeryColumns holds the columns for the "medical_surgery" table.
+	MedicalSurgeryColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "start_date", Type: field.TypeTime},
+		{Name: "end_date", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString},
+		{Name: "result", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString},
+		{Name: "fee", Type: field.TypeFloat64, Default: 0},
+		{Name: "main_doctor_id", Type: field.TypeUUID},
+		{Name: "support_doctor_ids", Type: field.TypeString},
+		{Name: "support_nurse_ids", Type: field.TypeString},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "created_by", Type: field.TypeUUID},
+		{Name: "updated_by", Type: field.TypeUUID},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "medical_history_id", Type: field.TypeUUID},
 	}
-	// OutpatientDetailsTable holds the schema information for the "outpatient_details" table.
-	OutpatientDetailsTable = &schema.Table{
-		Name:       "outpatient_details",
-		Columns:    OutpatientDetailsColumns,
-		PrimaryKey: []*schema.Column{OutpatientDetailsColumns[0]},
+	// MedicalSurgeryTable holds the schema information for the "medical_surgery" table.
+	MedicalSurgeryTable = &schema.Table{
+		Name:       "medical_surgery",
+		Columns:    MedicalSurgeryColumns,
+		PrimaryKey: []*schema.Column{MedicalSurgeryColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "medical_surgery_medical_histories_medical_surgery",
+				Columns:    []*schema.Column{MedicalSurgeryColumns[14]},
+				RefColumns: []*schema.Column{MedicalHistoriesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// MedicalTreatmentColumns holds the columns for the "medical_treatment" table.
+	MedicalTreatmentColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "start_date", Type: field.TypeTime},
+		{Name: "end_date", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString},
+		{Name: "result", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString},
+		{Name: "fee", Type: field.TypeFloat64, Default: 0},
+		{Name: "main_doctor_id", Type: field.TypeUUID},
+		{Name: "support_doctor_ids", Type: field.TypeString},
+		{Name: "support_nurse_ids", Type: field.TypeString},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "created_by", Type: field.TypeUUID},
+		{Name: "updated_by", Type: field.TypeUUID},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "medical_history_id", Type: field.TypeUUID},
+	}
+	// MedicalTreatmentTable holds the schema information for the "medical_treatment" table.
+	MedicalTreatmentTable = &schema.Table{
+		Name:       "medical_treatment",
+		Columns:    MedicalTreatmentColumns,
+		PrimaryKey: []*schema.Column{MedicalTreatmentColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "medical_treatment_medical_histories_medical_treatment",
+				Columns:    []*schema.Column{MedicalTreatmentColumns[14]},
+				RefColumns: []*schema.Column{MedicalHistoriesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// MedicationColumns holds the columns for the "medication" table.
+	MedicationColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString},
+		{Name: "effects", Type: field.TypeString},
+		{Name: "expired_date", Type: field.TypeTime},
+		{Name: "quantity", Type: field.TypeInt64, Default: 0},
+		{Name: "price", Type: field.TypeFloat64, Default: 0},
+		{Name: "created_by", Type: field.TypeUUID},
+		{Name: "updated_by", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// MedicationTable holds the schema information for the "medication" table.
+	MedicationTable = &schema.Table{
+		Name:       "medication",
+		Columns:    MedicationColumns,
+		PrimaryKey: []*schema.Column{MedicationColumns[0]},
 	}
 	// PatientColumns holds the columns for the "patient" table.
 	PatientColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "phone_number", Type: field.TypeString},
+		{Name: "phone", Type: field.TypeString},
 		{Name: "first_name", Type: field.TypeString},
 		{Name: "last_name", Type: field.TypeString},
 		{Name: "gender", Type: field.TypeInt32},
 		{Name: "address", Type: field.TypeString},
 		{Name: "date_of_birth", Type: field.TypeTime},
-		{Name: "current_patient_type", Type: field.TypeInt32, Default: 2},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_by", Type: field.TypeUUID},
+		{Name: "updated_by", Type: field.TypeUUID},
 	}
 	// PatientTable holds the schema information for the "patient" table.
 	PatientTable = &schema.Table{
@@ -136,53 +165,71 @@ var (
 		Columns:    PatientColumns,
 		PrimaryKey: []*schema.Column{PatientColumns[0]},
 	}
-	// TreatDetailsColumns holds the columns for the "treat_details" table.
-	TreatDetailsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+	// PrescriptionMedicationColumns holds the columns for the "prescription_medication" table.
+	PrescriptionMedicationColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "quantity", Type: field.TypeInt64, Default: 0},
+		{Name: "prescription_id", Type: field.TypeUUID},
+		{Name: "medication_id", Type: field.TypeUUID},
 	}
-	// TreatDetailsTable holds the schema information for the "treat_details" table.
-	TreatDetailsTable = &schema.Table{
-		Name:       "treat_details",
-		Columns:    TreatDetailsColumns,
-		PrimaryKey: []*schema.Column{TreatDetailsColumns[0]},
-	}
-	// TreatMedicationsColumns holds the columns for the "treat_medications" table.
-	TreatMedicationsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-	}
-	// TreatMedicationsTable holds the schema information for the "treat_medications" table.
-	TreatMedicationsTable = &schema.Table{
-		Name:       "treat_medications",
-		Columns:    TreatMedicationsColumns,
-		PrimaryKey: []*schema.Column{TreatMedicationsColumns[0]},
+	// PrescriptionMedicationTable holds the schema information for the "prescription_medication" table.
+	PrescriptionMedicationTable = &schema.Table{
+		Name:       "prescription_medication",
+		Columns:    PrescriptionMedicationColumns,
+		PrimaryKey: []*schema.Column{PrescriptionMedicationColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "prescription_medication_medical_prescription_prescription_medication",
+				Columns:    []*schema.Column{PrescriptionMedicationColumns[2]},
+				RefColumns: []*schema.Column{MedicalPrescriptionColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "prescription_medication_medication_prescription_medication",
+				Columns:    []*schema.Column{PrescriptionMedicationColumns[3]},
+				RefColumns: []*schema.Column{MedicationColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
-		ExamineDetailsTable,
-		ExamineMedicationsTable,
-		InpatientTable,
-		InpatientDetailsTable,
-		InvoicesTable,
-		MedicationsTable,
-		MedicationEffectsTable,
-		OutpatientTable,
-		OutpatientDetailsTable,
+		MedicalHistoriesTable,
+		MedicalPrescriptionTable,
+		MedicalSurgeryTable,
+		MedicalTreatmentTable,
+		MedicationTable,
 		PatientTable,
-		TreatDetailsTable,
-		TreatMedicationsTable,
+		PrescriptionMedicationTable,
 	}
 )
 
 func init() {
-	InpatientTable.ForeignKeys[0].RefTable = PatientTable
-	InpatientTable.Annotation = &entsql.Annotation{
-		Table: "inpatient",
+	MedicalHistoriesTable.ForeignKeys[0].RefTable = PatientTable
+	MedicalHistoriesTable.Annotation = &entsql.Annotation{
+		Table: "medical_histories",
 	}
-	OutpatientTable.ForeignKeys[0].RefTable = PatientTable
-	OutpatientTable.Annotation = &entsql.Annotation{
-		Table: "outpatient",
+	MedicalPrescriptionTable.ForeignKeys[0].RefTable = MedicalHistoriesTable
+	MedicalPrescriptionTable.Annotation = &entsql.Annotation{
+		Table: "medical_prescription",
+	}
+	MedicalSurgeryTable.ForeignKeys[0].RefTable = MedicalHistoriesTable
+	MedicalSurgeryTable.Annotation = &entsql.Annotation{
+		Table: "medical_surgery",
+	}
+	MedicalTreatmentTable.ForeignKeys[0].RefTable = MedicalHistoriesTable
+	MedicalTreatmentTable.Annotation = &entsql.Annotation{
+		Table: "medical_treatment",
+	}
+	MedicationTable.Annotation = &entsql.Annotation{
+		Table: "medication",
 	}
 	PatientTable.Annotation = &entsql.Annotation{
 		Table: "patient",
+	}
+	PrescriptionMedicationTable.ForeignKeys[0].RefTable = MedicalPrescriptionTable
+	PrescriptionMedicationTable.ForeignKeys[1].RefTable = MedicationTable
+	PrescriptionMedicationTable.Annotation = &entsql.Annotation{
+		Table: "prescription_medication",
 	}
 }

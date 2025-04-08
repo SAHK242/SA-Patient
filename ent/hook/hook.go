@@ -8,64 +8,52 @@ import (
 	"patient/ent"
 )
 
-// The ExamineDetailFunc type is an adapter to allow the use of ordinary
-// function as ExamineDetail mutator.
-type ExamineDetailFunc func(context.Context, *ent.ExamineDetailMutation) (ent.Value, error)
+// The MedicalHistoriesFunc type is an adapter to allow the use of ordinary
+// function as MedicalHistories mutator.
+type MedicalHistoriesFunc func(context.Context, *ent.MedicalHistoriesMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f ExamineDetailFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.ExamineDetailMutation); ok {
+func (f MedicalHistoriesFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.MedicalHistoriesMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ExamineDetailMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.MedicalHistoriesMutation", m)
 }
 
-// The ExamineMedicationFunc type is an adapter to allow the use of ordinary
-// function as ExamineMedication mutator.
-type ExamineMedicationFunc func(context.Context, *ent.ExamineMedicationMutation) (ent.Value, error)
+// The MedicalPrescriptionFunc type is an adapter to allow the use of ordinary
+// function as MedicalPrescription mutator.
+type MedicalPrescriptionFunc func(context.Context, *ent.MedicalPrescriptionMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f ExamineMedicationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.ExamineMedicationMutation); ok {
+func (f MedicalPrescriptionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.MedicalPrescriptionMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ExamineMedicationMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.MedicalPrescriptionMutation", m)
 }
 
-// The InpatientFunc type is an adapter to allow the use of ordinary
-// function as Inpatient mutator.
-type InpatientFunc func(context.Context, *ent.InpatientMutation) (ent.Value, error)
+// The MedicalSurgeryFunc type is an adapter to allow the use of ordinary
+// function as MedicalSurgery mutator.
+type MedicalSurgeryFunc func(context.Context, *ent.MedicalSurgeryMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f InpatientFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.InpatientMutation); ok {
+func (f MedicalSurgeryFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.MedicalSurgeryMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.InpatientMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.MedicalSurgeryMutation", m)
 }
 
-// The InpatientDetailFunc type is an adapter to allow the use of ordinary
-// function as InpatientDetail mutator.
-type InpatientDetailFunc func(context.Context, *ent.InpatientDetailMutation) (ent.Value, error)
+// The MedicalTreatmentFunc type is an adapter to allow the use of ordinary
+// function as MedicalTreatment mutator.
+type MedicalTreatmentFunc func(context.Context, *ent.MedicalTreatmentMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f InpatientDetailFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.InpatientDetailMutation); ok {
+func (f MedicalTreatmentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.MedicalTreatmentMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.InpatientDetailMutation", m)
-}
-
-// The InvoiceFunc type is an adapter to allow the use of ordinary
-// function as Invoice mutator.
-type InvoiceFunc func(context.Context, *ent.InvoiceMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f InvoiceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.InvoiceMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.InvoiceMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.MedicalTreatmentMutation", m)
 }
 
 // The MedicationFunc type is an adapter to allow the use of ordinary
@@ -80,42 +68,6 @@ func (f MedicationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.MedicationMutation", m)
 }
 
-// The MedicationEffectFunc type is an adapter to allow the use of ordinary
-// function as MedicationEffect mutator.
-type MedicationEffectFunc func(context.Context, *ent.MedicationEffectMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f MedicationEffectFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.MedicationEffectMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.MedicationEffectMutation", m)
-}
-
-// The OutpatientFunc type is an adapter to allow the use of ordinary
-// function as Outpatient mutator.
-type OutpatientFunc func(context.Context, *ent.OutpatientMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f OutpatientFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.OutpatientMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OutpatientMutation", m)
-}
-
-// The OutpatientDetailFunc type is an adapter to allow the use of ordinary
-// function as OutpatientDetail mutator.
-type OutpatientDetailFunc func(context.Context, *ent.OutpatientDetailMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f OutpatientDetailFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.OutpatientDetailMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OutpatientDetailMutation", m)
-}
-
 // The PatientFunc type is an adapter to allow the use of ordinary
 // function as Patient mutator.
 type PatientFunc func(context.Context, *ent.PatientMutation) (ent.Value, error)
@@ -128,28 +80,16 @@ func (f PatientFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PatientMutation", m)
 }
 
-// The TreatDetailFunc type is an adapter to allow the use of ordinary
-// function as TreatDetail mutator.
-type TreatDetailFunc func(context.Context, *ent.TreatDetailMutation) (ent.Value, error)
+// The PrescriptionMedicationFunc type is an adapter to allow the use of ordinary
+// function as PrescriptionMedication mutator.
+type PrescriptionMedicationFunc func(context.Context, *ent.PrescriptionMedicationMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f TreatDetailFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.TreatDetailMutation); ok {
+func (f PrescriptionMedicationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PrescriptionMedicationMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TreatDetailMutation", m)
-}
-
-// The TreatMedicationFunc type is an adapter to allow the use of ordinary
-// function as TreatMedication mutator.
-type TreatMedicationFunc func(context.Context, *ent.TreatMedicationMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f TreatMedicationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.TreatMedicationMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TreatMedicationMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PrescriptionMedicationMutation", m)
 }
 
 // Condition is a hook condition function.

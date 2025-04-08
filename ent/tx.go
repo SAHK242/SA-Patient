@@ -12,30 +12,20 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
-	// ExamineDetail is the client for interacting with the ExamineDetail builders.
-	ExamineDetail *ExamineDetailClient
-	// ExamineMedication is the client for interacting with the ExamineMedication builders.
-	ExamineMedication *ExamineMedicationClient
-	// Inpatient is the client for interacting with the Inpatient builders.
-	Inpatient *InpatientClient
-	// InpatientDetail is the client for interacting with the InpatientDetail builders.
-	InpatientDetail *InpatientDetailClient
-	// Invoice is the client for interacting with the Invoice builders.
-	Invoice *InvoiceClient
+	// MedicalHistories is the client for interacting with the MedicalHistories builders.
+	MedicalHistories *MedicalHistoriesClient
+	// MedicalPrescription is the client for interacting with the MedicalPrescription builders.
+	MedicalPrescription *MedicalPrescriptionClient
+	// MedicalSurgery is the client for interacting with the MedicalSurgery builders.
+	MedicalSurgery *MedicalSurgeryClient
+	// MedicalTreatment is the client for interacting with the MedicalTreatment builders.
+	MedicalTreatment *MedicalTreatmentClient
 	// Medication is the client for interacting with the Medication builders.
 	Medication *MedicationClient
-	// MedicationEffect is the client for interacting with the MedicationEffect builders.
-	MedicationEffect *MedicationEffectClient
-	// Outpatient is the client for interacting with the Outpatient builders.
-	Outpatient *OutpatientClient
-	// OutpatientDetail is the client for interacting with the OutpatientDetail builders.
-	OutpatientDetail *OutpatientDetailClient
 	// Patient is the client for interacting with the Patient builders.
 	Patient *PatientClient
-	// TreatDetail is the client for interacting with the TreatDetail builders.
-	TreatDetail *TreatDetailClient
-	// TreatMedication is the client for interacting with the TreatMedication builders.
-	TreatMedication *TreatMedicationClient
+	// PrescriptionMedication is the client for interacting with the PrescriptionMedication builders.
+	PrescriptionMedication *PrescriptionMedicationClient
 
 	// lazily loaded.
 	client     *Client
@@ -167,18 +157,13 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
-	tx.ExamineDetail = NewExamineDetailClient(tx.config)
-	tx.ExamineMedication = NewExamineMedicationClient(tx.config)
-	tx.Inpatient = NewInpatientClient(tx.config)
-	tx.InpatientDetail = NewInpatientDetailClient(tx.config)
-	tx.Invoice = NewInvoiceClient(tx.config)
+	tx.MedicalHistories = NewMedicalHistoriesClient(tx.config)
+	tx.MedicalPrescription = NewMedicalPrescriptionClient(tx.config)
+	tx.MedicalSurgery = NewMedicalSurgeryClient(tx.config)
+	tx.MedicalTreatment = NewMedicalTreatmentClient(tx.config)
 	tx.Medication = NewMedicationClient(tx.config)
-	tx.MedicationEffect = NewMedicationEffectClient(tx.config)
-	tx.Outpatient = NewOutpatientClient(tx.config)
-	tx.OutpatientDetail = NewOutpatientDetailClient(tx.config)
 	tx.Patient = NewPatientClient(tx.config)
-	tx.TreatDetail = NewTreatDetailClient(tx.config)
-	tx.TreatMedication = NewTreatMedicationClient(tx.config)
+	tx.PrescriptionMedication = NewPrescriptionMedicationClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.
@@ -188,7 +173,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: ExamineDetail.QueryXXX(), the query will be executed
+// applies a query, for example: MedicalHistories.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

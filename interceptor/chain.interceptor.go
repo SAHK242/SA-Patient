@@ -17,7 +17,7 @@ var publicAPIs = map[string]bool{
 }
 
 // validateToken checks if the given JWT token is valid
-func validateToken(tokenString string) bool {
+func validateToken(tokenString string) (bool, string) {
 	// Get the secret key from environment variables
 	secretKey := "sasasasa"
 
@@ -33,20 +33,20 @@ func validateToken(tokenString string) bool {
 	// Check if the token is valid
 	if err != nil || !token.Valid {
 		fmt.Println("Invalid token:", err)
-		return false
+		return false, ""
 	}
 
 	// Check expiration time (if needed)
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		fmt.Println("Invalid token claims")
-		return false
+		return false, ""
 	}
 
 	if exp, ok := claims["exp"].(float64); ok {
 		if time.Now().Unix() > int64(exp) {
 			fmt.Println("Token expired")
-			return false
+			return false, ""
 		}
 	}
 
@@ -54,11 +54,11 @@ func validateToken(tokenString string) bool {
 	if empID, ok := claims["emp_id"].(string); ok {
 		if empID == "" {
 			fmt.Println("Invalid token claims - only employee can access this service, not super admin")
-			return false
+			return false, ""
 		}
 	}
 
-	return true
+	return true, claims["emp_id"].(string)
 }
 
 // UnaryInterceptor checks if a request has a valid token
@@ -89,9 +89,13 @@ func UnaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServ
 	token := tokenParts[1]
 
 	// Validate the token
-	if !validateToken(token) {
+	isValid, empId := validateToken(token)
+	if !isValid {
 		return nil, fmt.Errorf("invalid or expired token")
 	}
+
+	// Store empId in context
+	ctx = context.WithValue(ctx, "emp_id", empId)
 
 	// Proceed with the request
 	return handler(ctx, req)

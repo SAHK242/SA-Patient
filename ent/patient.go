@@ -18,8 +18,8 @@ type Patient struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
-	// PhoneNumber holds the value of the "phone_number" field.
-	PhoneNumber string `json:"phone_number,omitempty"`
+	// Phone holds the value of the "phone" field.
+	Phone string `json:"phone,omitempty"`
 	// FirstName holds the value of the "first_name" field.
 	FirstName string `json:"first_name,omitempty"`
 	// LastName holds the value of the "last_name" field.
@@ -30,8 +30,14 @@ type Patient struct {
 	Address string `json:"address,omitempty"`
 	// DateOfBirth holds the value of the "date_of_birth" field.
 	DateOfBirth time.Time `json:"date_of_birth,omitempty"`
-	// CurrentPatientType holds the value of the "current_patient_type" field.
-	CurrentPatientType int32 `json:"current_patient_type,omitempty"`
+	// CreatedAt holds the value of the "created_at" field.
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	// UpdatedAt holds the value of the "updated_at" field.
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// CreatedBy holds the value of the "created_by" field.
+	CreatedBy uuid.UUID `json:"created_by,omitempty"`
+	// UpdatedBy holds the value of the "updated_by" field.
+	UpdatedBy uuid.UUID `json:"updated_by,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PatientQuery when eager-loading is set.
 	Edges        PatientEdges `json:"edges"`
@@ -40,31 +46,20 @@ type Patient struct {
 
 // PatientEdges holds the relations/edges for other nodes in the graph.
 type PatientEdges struct {
-	// Inpatients holds the value of the inpatients edge.
-	Inpatients []*Inpatient `json:"inpatients,omitempty"`
-	// Outpatients holds the value of the outpatients edge.
-	Outpatients []*Outpatient `json:"outpatients,omitempty"`
+	// MedicalHistory holds the value of the medical_history edge.
+	MedicalHistory []*MedicalHistories `json:"medical_history,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [1]bool
 }
 
-// InpatientsOrErr returns the Inpatients value or an error if the edge
+// MedicalHistoryOrErr returns the MedicalHistory value or an error if the edge
 // was not loaded in eager-loading.
-func (e PatientEdges) InpatientsOrErr() ([]*Inpatient, error) {
+func (e PatientEdges) MedicalHistoryOrErr() ([]*MedicalHistories, error) {
 	if e.loadedTypes[0] {
-		return e.Inpatients, nil
+		return e.MedicalHistory, nil
 	}
-	return nil, &NotLoadedError{edge: "inpatients"}
-}
-
-// OutpatientsOrErr returns the Outpatients value or an error if the edge
-// was not loaded in eager-loading.
-func (e PatientEdges) OutpatientsOrErr() ([]*Outpatient, error) {
-	if e.loadedTypes[1] {
-		return e.Outpatients, nil
-	}
-	return nil, &NotLoadedError{edge: "outpatients"}
+	return nil, &NotLoadedError{edge: "medical_history"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -72,13 +67,13 @@ func (*Patient) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case patient.FieldGender, patient.FieldCurrentPatientType:
+		case patient.FieldGender:
 			values[i] = new(sql.NullInt64)
-		case patient.FieldPhoneNumber, patient.FieldFirstName, patient.FieldLastName, patient.FieldAddress:
+		case patient.FieldPhone, patient.FieldFirstName, patient.FieldLastName, patient.FieldAddress:
 			values[i] = new(sql.NullString)
-		case patient.FieldDateOfBirth:
+		case patient.FieldDateOfBirth, patient.FieldCreatedAt, patient.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case patient.FieldID:
+		case patient.FieldID, patient.FieldCreatedBy, patient.FieldUpdatedBy:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -101,11 +96,11 @@ func (pa *Patient) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				pa.ID = *value
 			}
-		case patient.FieldPhoneNumber:
+		case patient.FieldPhone:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field phone_number", values[i])
+				return fmt.Errorf("unexpected type %T for field phone", values[i])
 			} else if value.Valid {
-				pa.PhoneNumber = value.String
+				pa.Phone = value.String
 			}
 		case patient.FieldFirstName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -137,11 +132,29 @@ func (pa *Patient) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				pa.DateOfBirth = value.Time
 			}
-		case patient.FieldCurrentPatientType:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field current_patient_type", values[i])
+		case patient.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				pa.CurrentPatientType = int32(value.Int64)
+				pa.CreatedAt = value.Time
+			}
+		case patient.FieldUpdatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
+			} else if value.Valid {
+				pa.UpdatedAt = value.Time
+			}
+		case patient.FieldCreatedBy:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field created_by", values[i])
+			} else if value != nil {
+				pa.CreatedBy = *value
+			}
+		case patient.FieldUpdatedBy:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field updated_by", values[i])
+			} else if value != nil {
+				pa.UpdatedBy = *value
 			}
 		default:
 			pa.selectValues.Set(columns[i], values[i])
@@ -156,14 +169,9 @@ func (pa *Patient) Value(name string) (ent.Value, error) {
 	return pa.selectValues.Get(name)
 }
 
-// QueryInpatients queries the "inpatients" edge of the Patient entity.
-func (pa *Patient) QueryInpatients() *InpatientQuery {
-	return NewPatientClient(pa.config).QueryInpatients(pa)
-}
-
-// QueryOutpatients queries the "outpatients" edge of the Patient entity.
-func (pa *Patient) QueryOutpatients() *OutpatientQuery {
-	return NewPatientClient(pa.config).QueryOutpatients(pa)
+// QueryMedicalHistory queries the "medical_history" edge of the Patient entity.
+func (pa *Patient) QueryMedicalHistory() *MedicalHistoriesQuery {
+	return NewPatientClient(pa.config).QueryMedicalHistory(pa)
 }
 
 // Update returns a builder for updating this Patient.
@@ -189,8 +197,8 @@ func (pa *Patient) String() string {
 	var builder strings.Builder
 	builder.WriteString("Patient(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", pa.ID))
-	builder.WriteString("phone_number=")
-	builder.WriteString(pa.PhoneNumber)
+	builder.WriteString("phone=")
+	builder.WriteString(pa.Phone)
 	builder.WriteString(", ")
 	builder.WriteString("first_name=")
 	builder.WriteString(pa.FirstName)
@@ -207,8 +215,17 @@ func (pa *Patient) String() string {
 	builder.WriteString("date_of_birth=")
 	builder.WriteString(pa.DateOfBirth.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("current_patient_type=")
-	builder.WriteString(fmt.Sprintf("%v", pa.CurrentPatientType))
+	builder.WriteString("created_at=")
+	builder.WriteString(pa.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("updated_at=")
+	builder.WriteString(pa.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("created_by=")
+	builder.WriteString(fmt.Sprintf("%v", pa.CreatedBy))
+	builder.WriteString(", ")
+	builder.WriteString("updated_by=")
+	builder.WriteString(fmt.Sprintf("%v", pa.UpdatedBy))
 	builder.WriteByte(')')
 	return builder.String()
 }

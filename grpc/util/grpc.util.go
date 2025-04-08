@@ -1,6 +1,8 @@
 package grpcutil
 
 import (
+	"context"
+	"fmt"
 	"math"
 
 	"patient/proto/gcommon"
@@ -33,4 +35,15 @@ func AsPageMetadata(pageable *gcommon.Pageable, totalElements int) *gcommon.Page
 
 func AsEmptyResponse() *gcommon.EmptyResponse {
 	return &gcommon.EmptyResponse{}
+}
+
+const ContextPrincipalKey = "ContextPrincipal" // or however your middleware sets the decoded token
+
+func GetEmployeeId(ctx context.Context) (string, error) {
+	val := ctx.Value("emp_id")
+	empId, ok := val.(string)
+	if !ok || empId == "" {
+		return "", fmt.Errorf("emp_id not found in context")
+	}
+	return empId, nil
 }

@@ -56,9 +56,9 @@ func IDLTE(id uuid.UUID) predicate.Patient {
 	return predicate.Patient(sql.FieldLTE(FieldID, id))
 }
 
-// PhoneNumber applies equality check predicate on the "phone_number" field. It's identical to PhoneNumberEQ.
-func PhoneNumber(v string) predicate.Patient {
-	return predicate.Patient(sql.FieldEQ(FieldPhoneNumber, v))
+// Phone applies equality check predicate on the "phone" field. It's identical to PhoneEQ.
+func Phone(v string) predicate.Patient {
+	return predicate.Patient(sql.FieldEQ(FieldPhone, v))
 }
 
 // FirstName applies equality check predicate on the "first_name" field. It's identical to FirstNameEQ.
@@ -86,74 +86,89 @@ func DateOfBirth(v time.Time) predicate.Patient {
 	return predicate.Patient(sql.FieldEQ(FieldDateOfBirth, v))
 }
 
-// CurrentPatientType applies equality check predicate on the "current_patient_type" field. It's identical to CurrentPatientTypeEQ.
-func CurrentPatientType(v int32) predicate.Patient {
-	return predicate.Patient(sql.FieldEQ(FieldCurrentPatientType, v))
+// CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
+func CreatedAt(v time.Time) predicate.Patient {
+	return predicate.Patient(sql.FieldEQ(FieldCreatedAt, v))
 }
 
-// PhoneNumberEQ applies the EQ predicate on the "phone_number" field.
-func PhoneNumberEQ(v string) predicate.Patient {
-	return predicate.Patient(sql.FieldEQ(FieldPhoneNumber, v))
+// UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
+func UpdatedAt(v time.Time) predicate.Patient {
+	return predicate.Patient(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
-// PhoneNumberNEQ applies the NEQ predicate on the "phone_number" field.
-func PhoneNumberNEQ(v string) predicate.Patient {
-	return predicate.Patient(sql.FieldNEQ(FieldPhoneNumber, v))
+// CreatedBy applies equality check predicate on the "created_by" field. It's identical to CreatedByEQ.
+func CreatedBy(v uuid.UUID) predicate.Patient {
+	return predicate.Patient(sql.FieldEQ(FieldCreatedBy, v))
 }
 
-// PhoneNumberIn applies the In predicate on the "phone_number" field.
-func PhoneNumberIn(vs ...string) predicate.Patient {
-	return predicate.Patient(sql.FieldIn(FieldPhoneNumber, vs...))
+// UpdatedBy applies equality check predicate on the "updated_by" field. It's identical to UpdatedByEQ.
+func UpdatedBy(v uuid.UUID) predicate.Patient {
+	return predicate.Patient(sql.FieldEQ(FieldUpdatedBy, v))
 }
 
-// PhoneNumberNotIn applies the NotIn predicate on the "phone_number" field.
-func PhoneNumberNotIn(vs ...string) predicate.Patient {
-	return predicate.Patient(sql.FieldNotIn(FieldPhoneNumber, vs...))
+// PhoneEQ applies the EQ predicate on the "phone" field.
+func PhoneEQ(v string) predicate.Patient {
+	return predicate.Patient(sql.FieldEQ(FieldPhone, v))
 }
 
-// PhoneNumberGT applies the GT predicate on the "phone_number" field.
-func PhoneNumberGT(v string) predicate.Patient {
-	return predicate.Patient(sql.FieldGT(FieldPhoneNumber, v))
+// PhoneNEQ applies the NEQ predicate on the "phone" field.
+func PhoneNEQ(v string) predicate.Patient {
+	return predicate.Patient(sql.FieldNEQ(FieldPhone, v))
 }
 
-// PhoneNumberGTE applies the GTE predicate on the "phone_number" field.
-func PhoneNumberGTE(v string) predicate.Patient {
-	return predicate.Patient(sql.FieldGTE(FieldPhoneNumber, v))
+// PhoneIn applies the In predicate on the "phone" field.
+func PhoneIn(vs ...string) predicate.Patient {
+	return predicate.Patient(sql.FieldIn(FieldPhone, vs...))
 }
 
-// PhoneNumberLT applies the LT predicate on the "phone_number" field.
-func PhoneNumberLT(v string) predicate.Patient {
-	return predicate.Patient(sql.FieldLT(FieldPhoneNumber, v))
+// PhoneNotIn applies the NotIn predicate on the "phone" field.
+func PhoneNotIn(vs ...string) predicate.Patient {
+	return predicate.Patient(sql.FieldNotIn(FieldPhone, vs...))
 }
 
-// PhoneNumberLTE applies the LTE predicate on the "phone_number" field.
-func PhoneNumberLTE(v string) predicate.Patient {
-	return predicate.Patient(sql.FieldLTE(FieldPhoneNumber, v))
+// PhoneGT applies the GT predicate on the "phone" field.
+func PhoneGT(v string) predicate.Patient {
+	return predicate.Patient(sql.FieldGT(FieldPhone, v))
 }
 
-// PhoneNumberContains applies the Contains predicate on the "phone_number" field.
-func PhoneNumberContains(v string) predicate.Patient {
-	return predicate.Patient(sql.FieldContains(FieldPhoneNumber, v))
+// PhoneGTE applies the GTE predicate on the "phone" field.
+func PhoneGTE(v string) predicate.Patient {
+	return predicate.Patient(sql.FieldGTE(FieldPhone, v))
 }
 
-// PhoneNumberHasPrefix applies the HasPrefix predicate on the "phone_number" field.
-func PhoneNumberHasPrefix(v string) predicate.Patient {
-	return predicate.Patient(sql.FieldHasPrefix(FieldPhoneNumber, v))
+// PhoneLT applies the LT predicate on the "phone" field.
+func PhoneLT(v string) predicate.Patient {
+	return predicate.Patient(sql.FieldLT(FieldPhone, v))
 }
 
-// PhoneNumberHasSuffix applies the HasSuffix predicate on the "phone_number" field.
-func PhoneNumberHasSuffix(v string) predicate.Patient {
-	return predicate.Patient(sql.FieldHasSuffix(FieldPhoneNumber, v))
+// PhoneLTE applies the LTE predicate on the "phone" field.
+func PhoneLTE(v string) predicate.Patient {
+	return predicate.Patient(sql.FieldLTE(FieldPhone, v))
 }
 
-// PhoneNumberEqualFold applies the EqualFold predicate on the "phone_number" field.
-func PhoneNumberEqualFold(v string) predicate.Patient {
-	return predicate.Patient(sql.FieldEqualFold(FieldPhoneNumber, v))
+// PhoneContains applies the Contains predicate on the "phone" field.
+func PhoneContains(v string) predicate.Patient {
+	return predicate.Patient(sql.FieldContains(FieldPhone, v))
 }
 
-// PhoneNumberContainsFold applies the ContainsFold predicate on the "phone_number" field.
-func PhoneNumberContainsFold(v string) predicate.Patient {
-	return predicate.Patient(sql.FieldContainsFold(FieldPhoneNumber, v))
+// PhoneHasPrefix applies the HasPrefix predicate on the "phone" field.
+func PhoneHasPrefix(v string) predicate.Patient {
+	return predicate.Patient(sql.FieldHasPrefix(FieldPhone, v))
+}
+
+// PhoneHasSuffix applies the HasSuffix predicate on the "phone" field.
+func PhoneHasSuffix(v string) predicate.Patient {
+	return predicate.Patient(sql.FieldHasSuffix(FieldPhone, v))
+}
+
+// PhoneEqualFold applies the EqualFold predicate on the "phone" field.
+func PhoneEqualFold(v string) predicate.Patient {
+	return predicate.Patient(sql.FieldEqualFold(FieldPhone, v))
+}
+
+// PhoneContainsFold applies the ContainsFold predicate on the "phone" field.
+func PhoneContainsFold(v string) predicate.Patient {
+	return predicate.Patient(sql.FieldContainsFold(FieldPhone, v))
 }
 
 // FirstNameEQ applies the EQ predicate on the "first_name" field.
@@ -431,84 +446,181 @@ func DateOfBirthLTE(v time.Time) predicate.Patient {
 	return predicate.Patient(sql.FieldLTE(FieldDateOfBirth, v))
 }
 
-// CurrentPatientTypeEQ applies the EQ predicate on the "current_patient_type" field.
-func CurrentPatientTypeEQ(v int32) predicate.Patient {
-	return predicate.Patient(sql.FieldEQ(FieldCurrentPatientType, v))
+// CreatedAtEQ applies the EQ predicate on the "created_at" field.
+func CreatedAtEQ(v time.Time) predicate.Patient {
+	return predicate.Patient(sql.FieldEQ(FieldCreatedAt, v))
 }
 
-// CurrentPatientTypeNEQ applies the NEQ predicate on the "current_patient_type" field.
-func CurrentPatientTypeNEQ(v int32) predicate.Patient {
-	return predicate.Patient(sql.FieldNEQ(FieldCurrentPatientType, v))
+// CreatedAtNEQ applies the NEQ predicate on the "created_at" field.
+func CreatedAtNEQ(v time.Time) predicate.Patient {
+	return predicate.Patient(sql.FieldNEQ(FieldCreatedAt, v))
 }
 
-// CurrentPatientTypeIn applies the In predicate on the "current_patient_type" field.
-func CurrentPatientTypeIn(vs ...int32) predicate.Patient {
-	return predicate.Patient(sql.FieldIn(FieldCurrentPatientType, vs...))
+// CreatedAtIn applies the In predicate on the "created_at" field.
+func CreatedAtIn(vs ...time.Time) predicate.Patient {
+	return predicate.Patient(sql.FieldIn(FieldCreatedAt, vs...))
 }
 
-// CurrentPatientTypeNotIn applies the NotIn predicate on the "current_patient_type" field.
-func CurrentPatientTypeNotIn(vs ...int32) predicate.Patient {
-	return predicate.Patient(sql.FieldNotIn(FieldCurrentPatientType, vs...))
+// CreatedAtNotIn applies the NotIn predicate on the "created_at" field.
+func CreatedAtNotIn(vs ...time.Time) predicate.Patient {
+	return predicate.Patient(sql.FieldNotIn(FieldCreatedAt, vs...))
 }
 
-// CurrentPatientTypeGT applies the GT predicate on the "current_patient_type" field.
-func CurrentPatientTypeGT(v int32) predicate.Patient {
-	return predicate.Patient(sql.FieldGT(FieldCurrentPatientType, v))
+// CreatedAtGT applies the GT predicate on the "created_at" field.
+func CreatedAtGT(v time.Time) predicate.Patient {
+	return predicate.Patient(sql.FieldGT(FieldCreatedAt, v))
 }
 
-// CurrentPatientTypeGTE applies the GTE predicate on the "current_patient_type" field.
-func CurrentPatientTypeGTE(v int32) predicate.Patient {
-	return predicate.Patient(sql.FieldGTE(FieldCurrentPatientType, v))
+// CreatedAtGTE applies the GTE predicate on the "created_at" field.
+func CreatedAtGTE(v time.Time) predicate.Patient {
+	return predicate.Patient(sql.FieldGTE(FieldCreatedAt, v))
 }
 
-// CurrentPatientTypeLT applies the LT predicate on the "current_patient_type" field.
-func CurrentPatientTypeLT(v int32) predicate.Patient {
-	return predicate.Patient(sql.FieldLT(FieldCurrentPatientType, v))
+// CreatedAtLT applies the LT predicate on the "created_at" field.
+func CreatedAtLT(v time.Time) predicate.Patient {
+	return predicate.Patient(sql.FieldLT(FieldCreatedAt, v))
 }
 
-// CurrentPatientTypeLTE applies the LTE predicate on the "current_patient_type" field.
-func CurrentPatientTypeLTE(v int32) predicate.Patient {
-	return predicate.Patient(sql.FieldLTE(FieldCurrentPatientType, v))
+// CreatedAtLTE applies the LTE predicate on the "created_at" field.
+func CreatedAtLTE(v time.Time) predicate.Patient {
+	return predicate.Patient(sql.FieldLTE(FieldCreatedAt, v))
 }
 
-// HasInpatients applies the HasEdge predicate on the "inpatients" edge.
-func HasInpatients() predicate.Patient {
+// UpdatedAtEQ applies the EQ predicate on the "updated_at" field.
+func UpdatedAtEQ(v time.Time) predicate.Patient {
+	return predicate.Patient(sql.FieldEQ(FieldUpdatedAt, v))
+}
+
+// UpdatedAtNEQ applies the NEQ predicate on the "updated_at" field.
+func UpdatedAtNEQ(v time.Time) predicate.Patient {
+	return predicate.Patient(sql.FieldNEQ(FieldUpdatedAt, v))
+}
+
+// UpdatedAtIn applies the In predicate on the "updated_at" field.
+func UpdatedAtIn(vs ...time.Time) predicate.Patient {
+	return predicate.Patient(sql.FieldIn(FieldUpdatedAt, vs...))
+}
+
+// UpdatedAtNotIn applies the NotIn predicate on the "updated_at" field.
+func UpdatedAtNotIn(vs ...time.Time) predicate.Patient {
+	return predicate.Patient(sql.FieldNotIn(FieldUpdatedAt, vs...))
+}
+
+// UpdatedAtGT applies the GT predicate on the "updated_at" field.
+func UpdatedAtGT(v time.Time) predicate.Patient {
+	return predicate.Patient(sql.FieldGT(FieldUpdatedAt, v))
+}
+
+// UpdatedAtGTE applies the GTE predicate on the "updated_at" field.
+func UpdatedAtGTE(v time.Time) predicate.Patient {
+	return predicate.Patient(sql.FieldGTE(FieldUpdatedAt, v))
+}
+
+// UpdatedAtLT applies the LT predicate on the "updated_at" field.
+func UpdatedAtLT(v time.Time) predicate.Patient {
+	return predicate.Patient(sql.FieldLT(FieldUpdatedAt, v))
+}
+
+// UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
+func UpdatedAtLTE(v time.Time) predicate.Patient {
+	return predicate.Patient(sql.FieldLTE(FieldUpdatedAt, v))
+}
+
+// CreatedByEQ applies the EQ predicate on the "created_by" field.
+func CreatedByEQ(v uuid.UUID) predicate.Patient {
+	return predicate.Patient(sql.FieldEQ(FieldCreatedBy, v))
+}
+
+// CreatedByNEQ applies the NEQ predicate on the "created_by" field.
+func CreatedByNEQ(v uuid.UUID) predicate.Patient {
+	return predicate.Patient(sql.FieldNEQ(FieldCreatedBy, v))
+}
+
+// CreatedByIn applies the In predicate on the "created_by" field.
+func CreatedByIn(vs ...uuid.UUID) predicate.Patient {
+	return predicate.Patient(sql.FieldIn(FieldCreatedBy, vs...))
+}
+
+// CreatedByNotIn applies the NotIn predicate on the "created_by" field.
+func CreatedByNotIn(vs ...uuid.UUID) predicate.Patient {
+	return predicate.Patient(sql.FieldNotIn(FieldCreatedBy, vs...))
+}
+
+// CreatedByGT applies the GT predicate on the "created_by" field.
+func CreatedByGT(v uuid.UUID) predicate.Patient {
+	return predicate.Patient(sql.FieldGT(FieldCreatedBy, v))
+}
+
+// CreatedByGTE applies the GTE predicate on the "created_by" field.
+func CreatedByGTE(v uuid.UUID) predicate.Patient {
+	return predicate.Patient(sql.FieldGTE(FieldCreatedBy, v))
+}
+
+// CreatedByLT applies the LT predicate on the "created_by" field.
+func CreatedByLT(v uuid.UUID) predicate.Patient {
+	return predicate.Patient(sql.FieldLT(FieldCreatedBy, v))
+}
+
+// CreatedByLTE applies the LTE predicate on the "created_by" field.
+func CreatedByLTE(v uuid.UUID) predicate.Patient {
+	return predicate.Patient(sql.FieldLTE(FieldCreatedBy, v))
+}
+
+// UpdatedByEQ applies the EQ predicate on the "updated_by" field.
+func UpdatedByEQ(v uuid.UUID) predicate.Patient {
+	return predicate.Patient(sql.FieldEQ(FieldUpdatedBy, v))
+}
+
+// UpdatedByNEQ applies the NEQ predicate on the "updated_by" field.
+func UpdatedByNEQ(v uuid.UUID) predicate.Patient {
+	return predicate.Patient(sql.FieldNEQ(FieldUpdatedBy, v))
+}
+
+// UpdatedByIn applies the In predicate on the "updated_by" field.
+func UpdatedByIn(vs ...uuid.UUID) predicate.Patient {
+	return predicate.Patient(sql.FieldIn(FieldUpdatedBy, vs...))
+}
+
+// UpdatedByNotIn applies the NotIn predicate on the "updated_by" field.
+func UpdatedByNotIn(vs ...uuid.UUID) predicate.Patient {
+	return predicate.Patient(sql.FieldNotIn(FieldUpdatedBy, vs...))
+}
+
+// UpdatedByGT applies the GT predicate on the "updated_by" field.
+func UpdatedByGT(v uuid.UUID) predicate.Patient {
+	return predicate.Patient(sql.FieldGT(FieldUpdatedBy, v))
+}
+
+// UpdatedByGTE applies the GTE predicate on the "updated_by" field.
+func UpdatedByGTE(v uuid.UUID) predicate.Patient {
+	return predicate.Patient(sql.FieldGTE(FieldUpdatedBy, v))
+}
+
+// UpdatedByLT applies the LT predicate on the "updated_by" field.
+func UpdatedByLT(v uuid.UUID) predicate.Patient {
+	return predicate.Patient(sql.FieldLT(FieldUpdatedBy, v))
+}
+
+// UpdatedByLTE applies the LTE predicate on the "updated_by" field.
+func UpdatedByLTE(v uuid.UUID) predicate.Patient {
+	return predicate.Patient(sql.FieldLTE(FieldUpdatedBy, v))
+}
+
+// HasMedicalHistory applies the HasEdge predicate on the "medical_history" edge.
+func HasMedicalHistory() predicate.Patient {
 	return predicate.Patient(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, InpatientsTable, InpatientsColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, MedicalHistoryTable, MedicalHistoryColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasInpatientsWith applies the HasEdge predicate on the "inpatients" edge with a given conditions (other predicates).
-func HasInpatientsWith(preds ...predicate.Inpatient) predicate.Patient {
+// HasMedicalHistoryWith applies the HasEdge predicate on the "medical_history" edge with a given conditions (other predicates).
+func HasMedicalHistoryWith(preds ...predicate.MedicalHistories) predicate.Patient {
 	return predicate.Patient(func(s *sql.Selector) {
-		step := newInpatientsStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasOutpatients applies the HasEdge predicate on the "outpatients" edge.
-func HasOutpatients() predicate.Patient {
-	return predicate.Patient(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, OutpatientsTable, OutpatientsColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasOutpatientsWith applies the HasEdge predicate on the "outpatients" edge with a given conditions (other predicates).
-func HasOutpatientsWith(preds ...predicate.Outpatient) predicate.Patient {
-	return predicate.Patient(func(s *sql.Selector) {
-		step := newOutpatientsStep()
+		step := newMedicalHistoryStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

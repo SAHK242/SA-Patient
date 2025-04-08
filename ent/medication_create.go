@@ -7,10 +7,14 @@ import (
 	"errors"
 	"fmt"
 	"patient/ent/medication"
+	"patient/ent/prescriptionmedication"
+	"time"
 
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // MedicationCreate is the builder for creating a Medication entity.
@@ -21,6 +25,121 @@ type MedicationCreate struct {
 	conflict []sql.ConflictOption
 }
 
+// SetName sets the "name" field.
+func (mc *MedicationCreate) SetName(s string) *MedicationCreate {
+	mc.mutation.SetName(s)
+	return mc
+}
+
+// SetEffects sets the "effects" field.
+func (mc *MedicationCreate) SetEffects(s string) *MedicationCreate {
+	mc.mutation.SetEffects(s)
+	return mc
+}
+
+// SetExpiredDate sets the "expired_date" field.
+func (mc *MedicationCreate) SetExpiredDate(t time.Time) *MedicationCreate {
+	mc.mutation.SetExpiredDate(t)
+	return mc
+}
+
+// SetQuantity sets the "quantity" field.
+func (mc *MedicationCreate) SetQuantity(i int64) *MedicationCreate {
+	mc.mutation.SetQuantity(i)
+	return mc
+}
+
+// SetNillableQuantity sets the "quantity" field if the given value is not nil.
+func (mc *MedicationCreate) SetNillableQuantity(i *int64) *MedicationCreate {
+	if i != nil {
+		mc.SetQuantity(*i)
+	}
+	return mc
+}
+
+// SetPrice sets the "price" field.
+func (mc *MedicationCreate) SetPrice(f float64) *MedicationCreate {
+	mc.mutation.SetPrice(f)
+	return mc
+}
+
+// SetNillablePrice sets the "price" field if the given value is not nil.
+func (mc *MedicationCreate) SetNillablePrice(f *float64) *MedicationCreate {
+	if f != nil {
+		mc.SetPrice(*f)
+	}
+	return mc
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (mc *MedicationCreate) SetCreatedBy(u uuid.UUID) *MedicationCreate {
+	mc.mutation.SetCreatedBy(u)
+	return mc
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (mc *MedicationCreate) SetUpdatedBy(u uuid.UUID) *MedicationCreate {
+	mc.mutation.SetUpdatedBy(u)
+	return mc
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (mc *MedicationCreate) SetCreatedAt(t time.Time) *MedicationCreate {
+	mc.mutation.SetCreatedAt(t)
+	return mc
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (mc *MedicationCreate) SetNillableCreatedAt(t *time.Time) *MedicationCreate {
+	if t != nil {
+		mc.SetCreatedAt(*t)
+	}
+	return mc
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (mc *MedicationCreate) SetUpdatedAt(t time.Time) *MedicationCreate {
+	mc.mutation.SetUpdatedAt(t)
+	return mc
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (mc *MedicationCreate) SetNillableUpdatedAt(t *time.Time) *MedicationCreate {
+	if t != nil {
+		mc.SetUpdatedAt(*t)
+	}
+	return mc
+}
+
+// SetID sets the "id" field.
+func (mc *MedicationCreate) SetID(u uuid.UUID) *MedicationCreate {
+	mc.mutation.SetID(u)
+	return mc
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (mc *MedicationCreate) SetNillableID(u *uuid.UUID) *MedicationCreate {
+	if u != nil {
+		mc.SetID(*u)
+	}
+	return mc
+}
+
+// AddPrescriptionMedicationIDs adds the "prescription_medication" edge to the PrescriptionMedication entity by IDs.
+func (mc *MedicationCreate) AddPrescriptionMedicationIDs(ids ...uuid.UUID) *MedicationCreate {
+	mc.mutation.AddPrescriptionMedicationIDs(ids...)
+	return mc
+}
+
+// AddPrescriptionMedication adds the "prescription_medication" edges to the PrescriptionMedication entity.
+func (mc *MedicationCreate) AddPrescriptionMedication(p ...*PrescriptionMedication) *MedicationCreate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return mc.AddPrescriptionMedicationIDs(ids...)
+}
+
 // Mutation returns the MedicationMutation object of the builder.
 func (mc *MedicationCreate) Mutation() *MedicationMutation {
 	return mc.mutation
@@ -28,6 +147,7 @@ func (mc *MedicationCreate) Mutation() *MedicationMutation {
 
 // Save creates the Medication in the database.
 func (mc *MedicationCreate) Save(ctx context.Context) (*Medication, error) {
+	mc.defaults()
 	return withHooks(ctx, mc.sqlSave, mc.mutation, mc.hooks)
 }
 
@@ -53,8 +173,64 @@ func (mc *MedicationCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (mc *MedicationCreate) defaults() {
+	if _, ok := mc.mutation.Quantity(); !ok {
+		v := medication.DefaultQuantity
+		mc.mutation.SetQuantity(v)
+	}
+	if _, ok := mc.mutation.Price(); !ok {
+		v := medication.DefaultPrice
+		mc.mutation.SetPrice(v)
+	}
+	if _, ok := mc.mutation.CreatedAt(); !ok {
+		v := medication.DefaultCreatedAt()
+		mc.mutation.SetCreatedAt(v)
+	}
+	if _, ok := mc.mutation.UpdatedAt(); !ok {
+		v := medication.DefaultUpdatedAt()
+		mc.mutation.SetUpdatedAt(v)
+	}
+	if _, ok := mc.mutation.ID(); !ok {
+		v := medication.DefaultID()
+		mc.mutation.SetID(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (mc *MedicationCreate) check() error {
+	if _, ok := mc.mutation.Name(); !ok {
+		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Medication.name"`)}
+	}
+	if v, ok := mc.mutation.Name(); ok {
+		if err := medication.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Medication.name": %w`, err)}
+		}
+	}
+	if _, ok := mc.mutation.Effects(); !ok {
+		return &ValidationError{Name: "effects", err: errors.New(`ent: missing required field "Medication.effects"`)}
+	}
+	if _, ok := mc.mutation.ExpiredDate(); !ok {
+		return &ValidationError{Name: "expired_date", err: errors.New(`ent: missing required field "Medication.expired_date"`)}
+	}
+	if _, ok := mc.mutation.Quantity(); !ok {
+		return &ValidationError{Name: "quantity", err: errors.New(`ent: missing required field "Medication.quantity"`)}
+	}
+	if _, ok := mc.mutation.Price(); !ok {
+		return &ValidationError{Name: "price", err: errors.New(`ent: missing required field "Medication.price"`)}
+	}
+	if _, ok := mc.mutation.CreatedBy(); !ok {
+		return &ValidationError{Name: "created_by", err: errors.New(`ent: missing required field "Medication.created_by"`)}
+	}
+	if _, ok := mc.mutation.UpdatedBy(); !ok {
+		return &ValidationError{Name: "updated_by", err: errors.New(`ent: missing required field "Medication.updated_by"`)}
+	}
+	if _, ok := mc.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Medication.created_at"`)}
+	}
+	if _, ok := mc.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Medication.updated_at"`)}
+	}
 	return nil
 }
 
@@ -69,8 +245,13 @@ func (mc *MedicationCreate) sqlSave(ctx context.Context) (*Medication, error) {
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	mc.mutation.id = &_node.ID
 	mc.mutation.done = true
 	return _node, nil
@@ -79,9 +260,65 @@ func (mc *MedicationCreate) sqlSave(ctx context.Context) (*Medication, error) {
 func (mc *MedicationCreate) createSpec() (*Medication, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Medication{config: mc.config}
-		_spec = sqlgraph.NewCreateSpec(medication.Table, sqlgraph.NewFieldSpec(medication.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(medication.Table, sqlgraph.NewFieldSpec(medication.FieldID, field.TypeUUID))
 	)
 	_spec.OnConflict = mc.conflict
+	if id, ok := mc.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
+	}
+	if value, ok := mc.mutation.Name(); ok {
+		_spec.SetField(medication.FieldName, field.TypeString, value)
+		_node.Name = value
+	}
+	if value, ok := mc.mutation.Effects(); ok {
+		_spec.SetField(medication.FieldEffects, field.TypeString, value)
+		_node.Effects = value
+	}
+	if value, ok := mc.mutation.ExpiredDate(); ok {
+		_spec.SetField(medication.FieldExpiredDate, field.TypeTime, value)
+		_node.ExpiredDate = value
+	}
+	if value, ok := mc.mutation.Quantity(); ok {
+		_spec.SetField(medication.FieldQuantity, field.TypeInt64, value)
+		_node.Quantity = value
+	}
+	if value, ok := mc.mutation.Price(); ok {
+		_spec.SetField(medication.FieldPrice, field.TypeFloat64, value)
+		_node.Price = value
+	}
+	if value, ok := mc.mutation.CreatedBy(); ok {
+		_spec.SetField(medication.FieldCreatedBy, field.TypeUUID, value)
+		_node.CreatedBy = value
+	}
+	if value, ok := mc.mutation.UpdatedBy(); ok {
+		_spec.SetField(medication.FieldUpdatedBy, field.TypeUUID, value)
+		_node.UpdatedBy = value
+	}
+	if value, ok := mc.mutation.CreatedAt(); ok {
+		_spec.SetField(medication.FieldCreatedAt, field.TypeTime, value)
+		_node.CreatedAt = value
+	}
+	if value, ok := mc.mutation.UpdatedAt(); ok {
+		_spec.SetField(medication.FieldUpdatedAt, field.TypeTime, value)
+		_node.UpdatedAt = value
+	}
+	if nodes := mc.mutation.PrescriptionMedicationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   medication.PrescriptionMedicationTable,
+			Columns: []string{medication.PrescriptionMedicationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(prescriptionmedication.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -89,11 +326,17 @@ func (mc *MedicationCreate) createSpec() (*Medication, *sqlgraph.CreateSpec) {
 // of the `INSERT` statement. For example:
 //
 //	client.Medication.Create().
+//		SetName(v).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
 //			sql.ResolveWithNewValues(),
 //		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.MedicationUpsert) {
+//			SetName(v+v).
+//		}).
 //		Exec(ctx)
 func (mc *MedicationCreate) OnConflict(opts ...sql.ConflictOption) *MedicationUpsertOne {
 	mc.conflict = opts
@@ -128,16 +371,144 @@ type (
 	}
 )
 
-// UpdateNewValues updates the mutable fields using the new values that were set on create.
+// SetName sets the "name" field.
+func (u *MedicationUpsert) SetName(v string) *MedicationUpsert {
+	u.Set(medication.FieldName, v)
+	return u
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *MedicationUpsert) UpdateName() *MedicationUpsert {
+	u.SetExcluded(medication.FieldName)
+	return u
+}
+
+// SetEffects sets the "effects" field.
+func (u *MedicationUpsert) SetEffects(v string) *MedicationUpsert {
+	u.Set(medication.FieldEffects, v)
+	return u
+}
+
+// UpdateEffects sets the "effects" field to the value that was provided on create.
+func (u *MedicationUpsert) UpdateEffects() *MedicationUpsert {
+	u.SetExcluded(medication.FieldEffects)
+	return u
+}
+
+// SetExpiredDate sets the "expired_date" field.
+func (u *MedicationUpsert) SetExpiredDate(v time.Time) *MedicationUpsert {
+	u.Set(medication.FieldExpiredDate, v)
+	return u
+}
+
+// UpdateExpiredDate sets the "expired_date" field to the value that was provided on create.
+func (u *MedicationUpsert) UpdateExpiredDate() *MedicationUpsert {
+	u.SetExcluded(medication.FieldExpiredDate)
+	return u
+}
+
+// SetQuantity sets the "quantity" field.
+func (u *MedicationUpsert) SetQuantity(v int64) *MedicationUpsert {
+	u.Set(medication.FieldQuantity, v)
+	return u
+}
+
+// UpdateQuantity sets the "quantity" field to the value that was provided on create.
+func (u *MedicationUpsert) UpdateQuantity() *MedicationUpsert {
+	u.SetExcluded(medication.FieldQuantity)
+	return u
+}
+
+// AddQuantity adds v to the "quantity" field.
+func (u *MedicationUpsert) AddQuantity(v int64) *MedicationUpsert {
+	u.Add(medication.FieldQuantity, v)
+	return u
+}
+
+// SetPrice sets the "price" field.
+func (u *MedicationUpsert) SetPrice(v float64) *MedicationUpsert {
+	u.Set(medication.FieldPrice, v)
+	return u
+}
+
+// UpdatePrice sets the "price" field to the value that was provided on create.
+func (u *MedicationUpsert) UpdatePrice() *MedicationUpsert {
+	u.SetExcluded(medication.FieldPrice)
+	return u
+}
+
+// AddPrice adds v to the "price" field.
+func (u *MedicationUpsert) AddPrice(v float64) *MedicationUpsert {
+	u.Add(medication.FieldPrice, v)
+	return u
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *MedicationUpsert) SetCreatedBy(v uuid.UUID) *MedicationUpsert {
+	u.Set(medication.FieldCreatedBy, v)
+	return u
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *MedicationUpsert) UpdateCreatedBy() *MedicationUpsert {
+	u.SetExcluded(medication.FieldCreatedBy)
+	return u
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (u *MedicationUpsert) SetUpdatedBy(v uuid.UUID) *MedicationUpsert {
+	u.Set(medication.FieldUpdatedBy, v)
+	return u
+}
+
+// UpdateUpdatedBy sets the "updated_by" field to the value that was provided on create.
+func (u *MedicationUpsert) UpdateUpdatedBy() *MedicationUpsert {
+	u.SetExcluded(medication.FieldUpdatedBy)
+	return u
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (u *MedicationUpsert) SetCreatedAt(v time.Time) *MedicationUpsert {
+	u.Set(medication.FieldCreatedAt, v)
+	return u
+}
+
+// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
+func (u *MedicationUpsert) UpdateCreatedAt() *MedicationUpsert {
+	u.SetExcluded(medication.FieldCreatedAt)
+	return u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *MedicationUpsert) SetUpdatedAt(v time.Time) *MedicationUpsert {
+	u.Set(medication.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *MedicationUpsert) UpdateUpdatedAt() *MedicationUpsert {
+	u.SetExcluded(medication.FieldUpdatedAt)
+	return u
+}
+
+// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
 //	client.Medication.Create().
 //		OnConflict(
 //			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(medication.FieldID)
+//			}),
 //		).
 //		Exec(ctx)
 func (u *MedicationUpsertOne) UpdateNewValues() *MedicationUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		if _, exists := u.create.mutation.ID(); exists {
+			s.SetIgnore(medication.FieldID)
+		}
+	}))
 	return u
 }
 
@@ -168,6 +539,146 @@ func (u *MedicationUpsertOne) Update(set func(*MedicationUpsert)) *MedicationUps
 	return u
 }
 
+// SetName sets the "name" field.
+func (u *MedicationUpsertOne) SetName(v string) *MedicationUpsertOne {
+	return u.Update(func(s *MedicationUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *MedicationUpsertOne) UpdateName() *MedicationUpsertOne {
+	return u.Update(func(s *MedicationUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetEffects sets the "effects" field.
+func (u *MedicationUpsertOne) SetEffects(v string) *MedicationUpsertOne {
+	return u.Update(func(s *MedicationUpsert) {
+		s.SetEffects(v)
+	})
+}
+
+// UpdateEffects sets the "effects" field to the value that was provided on create.
+func (u *MedicationUpsertOne) UpdateEffects() *MedicationUpsertOne {
+	return u.Update(func(s *MedicationUpsert) {
+		s.UpdateEffects()
+	})
+}
+
+// SetExpiredDate sets the "expired_date" field.
+func (u *MedicationUpsertOne) SetExpiredDate(v time.Time) *MedicationUpsertOne {
+	return u.Update(func(s *MedicationUpsert) {
+		s.SetExpiredDate(v)
+	})
+}
+
+// UpdateExpiredDate sets the "expired_date" field to the value that was provided on create.
+func (u *MedicationUpsertOne) UpdateExpiredDate() *MedicationUpsertOne {
+	return u.Update(func(s *MedicationUpsert) {
+		s.UpdateExpiredDate()
+	})
+}
+
+// SetQuantity sets the "quantity" field.
+func (u *MedicationUpsertOne) SetQuantity(v int64) *MedicationUpsertOne {
+	return u.Update(func(s *MedicationUpsert) {
+		s.SetQuantity(v)
+	})
+}
+
+// AddQuantity adds v to the "quantity" field.
+func (u *MedicationUpsertOne) AddQuantity(v int64) *MedicationUpsertOne {
+	return u.Update(func(s *MedicationUpsert) {
+		s.AddQuantity(v)
+	})
+}
+
+// UpdateQuantity sets the "quantity" field to the value that was provided on create.
+func (u *MedicationUpsertOne) UpdateQuantity() *MedicationUpsertOne {
+	return u.Update(func(s *MedicationUpsert) {
+		s.UpdateQuantity()
+	})
+}
+
+// SetPrice sets the "price" field.
+func (u *MedicationUpsertOne) SetPrice(v float64) *MedicationUpsertOne {
+	return u.Update(func(s *MedicationUpsert) {
+		s.SetPrice(v)
+	})
+}
+
+// AddPrice adds v to the "price" field.
+func (u *MedicationUpsertOne) AddPrice(v float64) *MedicationUpsertOne {
+	return u.Update(func(s *MedicationUpsert) {
+		s.AddPrice(v)
+	})
+}
+
+// UpdatePrice sets the "price" field to the value that was provided on create.
+func (u *MedicationUpsertOne) UpdatePrice() *MedicationUpsertOne {
+	return u.Update(func(s *MedicationUpsert) {
+		s.UpdatePrice()
+	})
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *MedicationUpsertOne) SetCreatedBy(v uuid.UUID) *MedicationUpsertOne {
+	return u.Update(func(s *MedicationUpsert) {
+		s.SetCreatedBy(v)
+	})
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *MedicationUpsertOne) UpdateCreatedBy() *MedicationUpsertOne {
+	return u.Update(func(s *MedicationUpsert) {
+		s.UpdateCreatedBy()
+	})
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (u *MedicationUpsertOne) SetUpdatedBy(v uuid.UUID) *MedicationUpsertOne {
+	return u.Update(func(s *MedicationUpsert) {
+		s.SetUpdatedBy(v)
+	})
+}
+
+// UpdateUpdatedBy sets the "updated_by" field to the value that was provided on create.
+func (u *MedicationUpsertOne) UpdateUpdatedBy() *MedicationUpsertOne {
+	return u.Update(func(s *MedicationUpsert) {
+		s.UpdateUpdatedBy()
+	})
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (u *MedicationUpsertOne) SetCreatedAt(v time.Time) *MedicationUpsertOne {
+	return u.Update(func(s *MedicationUpsert) {
+		s.SetCreatedAt(v)
+	})
+}
+
+// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
+func (u *MedicationUpsertOne) UpdateCreatedAt() *MedicationUpsertOne {
+	return u.Update(func(s *MedicationUpsert) {
+		s.UpdateCreatedAt()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *MedicationUpsertOne) SetUpdatedAt(v time.Time) *MedicationUpsertOne {
+	return u.Update(func(s *MedicationUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *MedicationUpsertOne) UpdateUpdatedAt() *MedicationUpsertOne {
+	return u.Update(func(s *MedicationUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
 // Exec executes the query.
 func (u *MedicationUpsertOne) Exec(ctx context.Context) error {
 	if len(u.create.conflict) == 0 {
@@ -184,7 +695,12 @@ func (u *MedicationUpsertOne) ExecX(ctx context.Context) {
 }
 
 // Exec executes the UPSERT query and returns the inserted/updated ID.
-func (u *MedicationUpsertOne) ID(ctx context.Context) (id int, err error) {
+func (u *MedicationUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+	if u.create.driver.Dialect() == dialect.MySQL {
+		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
+		// fields from the database since MySQL does not support the RETURNING clause.
+		return id, errors.New("ent: MedicationUpsertOne.ID is not supported by MySQL driver. Use MedicationUpsertOne.Exec instead")
+	}
 	node, err := u.create.Save(ctx)
 	if err != nil {
 		return id, err
@@ -193,7 +709,7 @@ func (u *MedicationUpsertOne) ID(ctx context.Context) (id int, err error) {
 }
 
 // IDX is like ID, but panics if an error occurs.
-func (u *MedicationUpsertOne) IDX(ctx context.Context) int {
+func (u *MedicationUpsertOne) IDX(ctx context.Context) uuid.UUID {
 	id, err := u.ID(ctx)
 	if err != nil {
 		panic(err)
@@ -220,6 +736,7 @@ func (mcb *MedicationCreateBulk) Save(ctx context.Context) ([]*Medication, error
 	for i := range mcb.builders {
 		func(i int, root context.Context) {
 			builder := mcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*MedicationMutation)
 				if !ok {
@@ -247,10 +764,6 @@ func (mcb *MedicationCreateBulk) Save(ctx context.Context) ([]*Medication, error
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})
@@ -299,6 +812,11 @@ func (mcb *MedicationCreateBulk) ExecX(ctx context.Context) {
 //			// the was proposed for insertion.
 //			sql.ResolveWithNewValues(),
 //		).
+//		// Override some of the fields with custom
+//		// update values.
+//		Update(func(u *ent.MedicationUpsert) {
+//			SetName(v+v).
+//		}).
 //		Exec(ctx)
 func (mcb *MedicationCreateBulk) OnConflict(opts ...sql.ConflictOption) *MedicationUpsertBulk {
 	mcb.conflict = opts
@@ -332,10 +850,20 @@ type MedicationUpsertBulk struct {
 //	client.Medication.Create().
 //		OnConflict(
 //			sql.ResolveWithNewValues(),
+//			sql.ResolveWith(func(u *sql.UpdateSet) {
+//				u.SetIgnore(medication.FieldID)
+//			}),
 //		).
 //		Exec(ctx)
 func (u *MedicationUpsertBulk) UpdateNewValues() *MedicationUpsertBulk {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
+	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
+		for _, b := range u.create.builders {
+			if _, exists := b.mutation.ID(); exists {
+				s.SetIgnore(medication.FieldID)
+			}
+		}
+	}))
 	return u
 }
 
@@ -364,6 +892,146 @@ func (u *MedicationUpsertBulk) Update(set func(*MedicationUpsert)) *MedicationUp
 		set(&MedicationUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetName sets the "name" field.
+func (u *MedicationUpsertBulk) SetName(v string) *MedicationUpsertBulk {
+	return u.Update(func(s *MedicationUpsert) {
+		s.SetName(v)
+	})
+}
+
+// UpdateName sets the "name" field to the value that was provided on create.
+func (u *MedicationUpsertBulk) UpdateName() *MedicationUpsertBulk {
+	return u.Update(func(s *MedicationUpsert) {
+		s.UpdateName()
+	})
+}
+
+// SetEffects sets the "effects" field.
+func (u *MedicationUpsertBulk) SetEffects(v string) *MedicationUpsertBulk {
+	return u.Update(func(s *MedicationUpsert) {
+		s.SetEffects(v)
+	})
+}
+
+// UpdateEffects sets the "effects" field to the value that was provided on create.
+func (u *MedicationUpsertBulk) UpdateEffects() *MedicationUpsertBulk {
+	return u.Update(func(s *MedicationUpsert) {
+		s.UpdateEffects()
+	})
+}
+
+// SetExpiredDate sets the "expired_date" field.
+func (u *MedicationUpsertBulk) SetExpiredDate(v time.Time) *MedicationUpsertBulk {
+	return u.Update(func(s *MedicationUpsert) {
+		s.SetExpiredDate(v)
+	})
+}
+
+// UpdateExpiredDate sets the "expired_date" field to the value that was provided on create.
+func (u *MedicationUpsertBulk) UpdateExpiredDate() *MedicationUpsertBulk {
+	return u.Update(func(s *MedicationUpsert) {
+		s.UpdateExpiredDate()
+	})
+}
+
+// SetQuantity sets the "quantity" field.
+func (u *MedicationUpsertBulk) SetQuantity(v int64) *MedicationUpsertBulk {
+	return u.Update(func(s *MedicationUpsert) {
+		s.SetQuantity(v)
+	})
+}
+
+// AddQuantity adds v to the "quantity" field.
+func (u *MedicationUpsertBulk) AddQuantity(v int64) *MedicationUpsertBulk {
+	return u.Update(func(s *MedicationUpsert) {
+		s.AddQuantity(v)
+	})
+}
+
+// UpdateQuantity sets the "quantity" field to the value that was provided on create.
+func (u *MedicationUpsertBulk) UpdateQuantity() *MedicationUpsertBulk {
+	return u.Update(func(s *MedicationUpsert) {
+		s.UpdateQuantity()
+	})
+}
+
+// SetPrice sets the "price" field.
+func (u *MedicationUpsertBulk) SetPrice(v float64) *MedicationUpsertBulk {
+	return u.Update(func(s *MedicationUpsert) {
+		s.SetPrice(v)
+	})
+}
+
+// AddPrice adds v to the "price" field.
+func (u *MedicationUpsertBulk) AddPrice(v float64) *MedicationUpsertBulk {
+	return u.Update(func(s *MedicationUpsert) {
+		s.AddPrice(v)
+	})
+}
+
+// UpdatePrice sets the "price" field to the value that was provided on create.
+func (u *MedicationUpsertBulk) UpdatePrice() *MedicationUpsertBulk {
+	return u.Update(func(s *MedicationUpsert) {
+		s.UpdatePrice()
+	})
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *MedicationUpsertBulk) SetCreatedBy(v uuid.UUID) *MedicationUpsertBulk {
+	return u.Update(func(s *MedicationUpsert) {
+		s.SetCreatedBy(v)
+	})
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *MedicationUpsertBulk) UpdateCreatedBy() *MedicationUpsertBulk {
+	return u.Update(func(s *MedicationUpsert) {
+		s.UpdateCreatedBy()
+	})
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (u *MedicationUpsertBulk) SetUpdatedBy(v uuid.UUID) *MedicationUpsertBulk {
+	return u.Update(func(s *MedicationUpsert) {
+		s.SetUpdatedBy(v)
+	})
+}
+
+// UpdateUpdatedBy sets the "updated_by" field to the value that was provided on create.
+func (u *MedicationUpsertBulk) UpdateUpdatedBy() *MedicationUpsertBulk {
+	return u.Update(func(s *MedicationUpsert) {
+		s.UpdateUpdatedBy()
+	})
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (u *MedicationUpsertBulk) SetCreatedAt(v time.Time) *MedicationUpsertBulk {
+	return u.Update(func(s *MedicationUpsert) {
+		s.SetCreatedAt(v)
+	})
+}
+
+// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
+func (u *MedicationUpsertBulk) UpdateCreatedAt() *MedicationUpsertBulk {
+	return u.Update(func(s *MedicationUpsert) {
+		s.UpdateCreatedAt()
+	})
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *MedicationUpsertBulk) SetUpdatedAt(v time.Time) *MedicationUpsertBulk {
+	return u.Update(func(s *MedicationUpsert) {
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *MedicationUpsertBulk) UpdateUpdatedAt() *MedicationUpsertBulk {
+	return u.Update(func(s *MedicationUpsert) {
+		s.UpdateUpdatedAt()
+	})
 }
 
 // Exec executes the query.

@@ -3,7 +3,11 @@
 package medication
 
 import (
+	"time"
+
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/google/uuid"
 )
 
 const (
@@ -11,13 +15,49 @@ const (
 	Label = "medication"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldName holds the string denoting the name field in the database.
+	FieldName = "name"
+	// FieldEffects holds the string denoting the effects field in the database.
+	FieldEffects = "effects"
+	// FieldExpiredDate holds the string denoting the expired_date field in the database.
+	FieldExpiredDate = "expired_date"
+	// FieldQuantity holds the string denoting the quantity field in the database.
+	FieldQuantity = "quantity"
+	// FieldPrice holds the string denoting the price field in the database.
+	FieldPrice = "price"
+	// FieldCreatedBy holds the string denoting the created_by field in the database.
+	FieldCreatedBy = "created_by"
+	// FieldUpdatedBy holds the string denoting the updated_by field in the database.
+	FieldUpdatedBy = "updated_by"
+	// FieldCreatedAt holds the string denoting the created_at field in the database.
+	FieldCreatedAt = "created_at"
+	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
+	FieldUpdatedAt = "updated_at"
+	// EdgePrescriptionMedication holds the string denoting the prescription_medication edge name in mutations.
+	EdgePrescriptionMedication = "prescription_medication"
 	// Table holds the table name of the medication in the database.
-	Table = "medications"
+	Table = "medication"
+	// PrescriptionMedicationTable is the table that holds the prescription_medication relation/edge.
+	PrescriptionMedicationTable = "prescription_medication"
+	// PrescriptionMedicationInverseTable is the table name for the PrescriptionMedication entity.
+	// It exists in this package in order to avoid circular dependency with the "prescriptionmedication" package.
+	PrescriptionMedicationInverseTable = "prescription_medication"
+	// PrescriptionMedicationColumn is the table column denoting the prescription_medication relation/edge.
+	PrescriptionMedicationColumn = "medication_id"
 )
 
 // Columns holds all SQL columns for medication fields.
 var Columns = []string{
 	FieldID,
+	FieldName,
+	FieldEffects,
+	FieldExpiredDate,
+	FieldQuantity,
+	FieldPrice,
+	FieldCreatedBy,
+	FieldUpdatedBy,
+	FieldCreatedAt,
+	FieldUpdatedAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -30,10 +70,93 @@ func ValidColumn(column string) bool {
 	return false
 }
 
+var (
+	// NameValidator is a validator for the "name" field. It is called by the builders before save.
+	NameValidator func(string) error
+	// DefaultQuantity holds the default value on creation for the "quantity" field.
+	DefaultQuantity int64
+	// DefaultPrice holds the default value on creation for the "price" field.
+	DefaultPrice float64
+	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
+	DefaultCreatedAt func() time.Time
+	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
+	DefaultUpdatedAt func() time.Time
+	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
+	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultID holds the default value on creation for the "id" field.
+	DefaultID func() uuid.UUID
+)
+
 // OrderOption defines the ordering options for the Medication queries.
 type OrderOption func(*sql.Selector)
 
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
+}
+
+// ByEffects orders the results by the effects field.
+func ByEffects(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEffects, opts...).ToFunc()
+}
+
+// ByExpiredDate orders the results by the expired_date field.
+func ByExpiredDate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExpiredDate, opts...).ToFunc()
+}
+
+// ByQuantity orders the results by the quantity field.
+func ByQuantity(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldQuantity, opts...).ToFunc()
+}
+
+// ByPrice orders the results by the price field.
+func ByPrice(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPrice, opts...).ToFunc()
+}
+
+// ByCreatedBy orders the results by the created_by field.
+func ByCreatedBy(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreatedBy, opts...).ToFunc()
+}
+
+// ByUpdatedBy orders the results by the updated_by field.
+func ByUpdatedBy(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUpdatedBy, opts...).ToFunc()
+}
+
+// ByCreatedAt orders the results by the created_at field.
+func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+}
+
+// ByUpdatedAt orders the results by the updated_at field.
+func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
+}
+
+// ByPrescriptionMedicationCount orders the results by prescription_medication count.
+func ByPrescriptionMedicationCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newPrescriptionMedicationStep(), opts...)
+	}
+}
+
+// ByPrescriptionMedication orders the results by prescription_medication terms.
+func ByPrescriptionMedication(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newPrescriptionMedicationStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newPrescriptionMedicationStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(PrescriptionMedicationInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, PrescriptionMedicationTable, PrescriptionMedicationColumn),
+	)
 }

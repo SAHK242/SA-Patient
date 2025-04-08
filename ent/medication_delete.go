@@ -40,7 +40,7 @@ func (md *MedicationDelete) ExecX(ctx context.Context) int {
 }
 
 func (md *MedicationDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := sqlgraph.NewDeleteSpec(medication.Table, sqlgraph.NewFieldSpec(medication.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewDeleteSpec(medication.Table, sqlgraph.NewFieldSpec(medication.FieldID, field.TypeUUID))
 	if ps := md.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {

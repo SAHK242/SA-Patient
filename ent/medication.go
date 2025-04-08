@@ -6,17 +6,58 @@ import (
 	"fmt"
 	"patient/ent/medication"
 	"strings"
+	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 )
 
 // Medication is the model entity for the Medication schema.
 type Medication struct {
-	config
+	config `json:"-"`
 	// ID of the ent.
-	ID           int `json:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty"`
+	// Name holds the value of the "name" field.
+	Name string `json:"name,omitempty"`
+	// Effects holds the value of the "effects" field.
+	Effects string `json:"effects,omitempty"`
+	// ExpiredDate holds the value of the "expired_date" field.
+	ExpiredDate time.Time `json:"expired_date,omitempty"`
+	// Quantity holds the value of the "quantity" field.
+	Quantity int64 `json:"quantity,omitempty"`
+	// Price holds the value of the "price" field.
+	Price float64 `json:"price,omitempty"`
+	// CreatedBy holds the value of the "created_by" field.
+	CreatedBy uuid.UUID `json:"created_by,omitempty"`
+	// UpdatedBy holds the value of the "updated_by" field.
+	UpdatedBy uuid.UUID `json:"updated_by,omitempty"`
+	// CreatedAt holds the value of the "created_at" field.
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	// UpdatedAt holds the value of the "updated_at" field.
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the MedicationQuery when eager-loading is set.
+	Edges        MedicationEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// MedicationEdges holds the relations/edges for other nodes in the graph.
+type MedicationEdges struct {
+	// PrescriptionMedication holds the value of the prescription_medication edge.
+	PrescriptionMedication []*PrescriptionMedication `json:"prescription_medication,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// PrescriptionMedicationOrErr returns the PrescriptionMedication value or an error if the edge
+// was not loaded in eager-loading.
+func (e MedicationEdges) PrescriptionMedicationOrErr() ([]*PrescriptionMedication, error) {
+	if e.loadedTypes[0] {
+		return e.PrescriptionMedication, nil
+	}
+	return nil, &NotLoadedError{edge: "prescription_medication"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -24,8 +65,16 @@ func (*Medication) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case medication.FieldID:
+		case medication.FieldPrice:
+			values[i] = new(sql.NullFloat64)
+		case medication.FieldQuantity:
 			values[i] = new(sql.NullInt64)
+		case medication.FieldName, medication.FieldEffects:
+			values[i] = new(sql.NullString)
+		case medication.FieldExpiredDate, medication.FieldCreatedAt, medication.FieldUpdatedAt:
+			values[i] = new(sql.NullTime)
+		case medication.FieldID, medication.FieldCreatedBy, medication.FieldUpdatedBy:
+			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -42,11 +91,65 @@ func (m *Medication) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case medication.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value != nil {
+				m.ID = *value
 			}
-			m.ID = int(value.Int64)
+		case medication.FieldName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field name", values[i])
+			} else if value.Valid {
+				m.Name = value.String
+			}
+		case medication.FieldEffects:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field effects", values[i])
+			} else if value.Valid {
+				m.Effects = value.String
+			}
+		case medication.FieldExpiredDate:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field expired_date", values[i])
+			} else if value.Valid {
+				m.ExpiredDate = value.Time
+			}
+		case medication.FieldQuantity:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field quantity", values[i])
+			} else if value.Valid {
+				m.Quantity = value.Int64
+			}
+		case medication.FieldPrice:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field price", values[i])
+			} else if value.Valid {
+				m.Price = value.Float64
+			}
+		case medication.FieldCreatedBy:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field created_by", values[i])
+			} else if value != nil {
+				m.CreatedBy = *value
+			}
+		case medication.FieldUpdatedBy:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field updated_by", values[i])
+			} else if value != nil {
+				m.UpdatedBy = *value
+			}
+		case medication.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
+			} else if value.Valid {
+				m.CreatedAt = value.Time
+			}
+		case medication.FieldUpdatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
+			} else if value.Valid {
+				m.UpdatedAt = value.Time
+			}
 		default:
 			m.selectValues.Set(columns[i], values[i])
 		}
@@ -58,6 +161,11 @@ func (m *Medication) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (m *Medication) Value(name string) (ent.Value, error) {
 	return m.selectValues.Get(name)
+}
+
+// QueryPrescriptionMedication queries the "prescription_medication" edge of the Medication entity.
+func (m *Medication) QueryPrescriptionMedication() *PrescriptionMedicationQuery {
+	return NewMedicationClient(m.config).QueryPrescriptionMedication(m)
 }
 
 // Update returns a builder for updating this Medication.
@@ -82,7 +190,33 @@ func (m *Medication) Unwrap() *Medication {
 func (m *Medication) String() string {
 	var builder strings.Builder
 	builder.WriteString("Medication(")
-	builder.WriteString(fmt.Sprintf("id=%v", m.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", m.ID))
+	builder.WriteString("name=")
+	builder.WriteString(m.Name)
+	builder.WriteString(", ")
+	builder.WriteString("effects=")
+	builder.WriteString(m.Effects)
+	builder.WriteString(", ")
+	builder.WriteString("expired_date=")
+	builder.WriteString(m.ExpiredDate.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("quantity=")
+	builder.WriteString(fmt.Sprintf("%v", m.Quantity))
+	builder.WriteString(", ")
+	builder.WriteString("price=")
+	builder.WriteString(fmt.Sprintf("%v", m.Price))
+	builder.WriteString(", ")
+	builder.WriteString("created_by=")
+	builder.WriteString(fmt.Sprintf("%v", m.CreatedBy))
+	builder.WriteString(", ")
+	builder.WriteString("updated_by=")
+	builder.WriteString(fmt.Sprintf("%v", m.UpdatedBy))
+	builder.WriteString(", ")
+	builder.WriteString("created_at=")
+	builder.WriteString(m.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("updated_at=")
+	builder.WriteString(m.UpdatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -15,6 +15,16 @@ type patientGrpcValidator struct {
 	patientRepository repository.PatientRepository
 }
 
+func NewPatientGrpcValidator(
+	logger *zap.SugaredLogger,
+	patientRepository repository.PatientRepository,
+) PatientValidator {
+	return &patientGrpcValidator{
+		logger:            logger,
+		patientRepository: patientRepository,
+	}
+}
+
 func (v *patientGrpcValidator) ValidateUpsertPatientRequest(ctx context.Context, req *patient.UpsertPatientRequest) error {
 	if req.FirstName == "" {
 		return status.Error(codes.InvalidArgument, "first name is required")
@@ -36,23 +46,9 @@ func (v *patientGrpcValidator) ValidateUpsertPatientRequest(ctx context.Context,
 		return status.Error(codes.InvalidArgument, "address is required")
 	}
 
-	if req.PhoneNumber == "" {
+	if req.Phone == "" {
 		return status.Error(codes.InvalidArgument, "phone number is required")
 	}
 
-	if req.PatientType != gcommon.PatientType_PATIENT_TYPE_UNSPECIFIED && req.PatientType != gcommon.PatientType_PATIENT_TYPE_INPATIENT && req.PatientType != gcommon.PatientType_PATIENT_TYPE_OUTPATIENT {
-		return status.Error(codes.InvalidArgument, "patient type is invalid")
-	}
-
 	return nil
-}
-
-func NewPatientGrpcValidator(
-	logger *zap.SugaredLogger,
-	patientRepository repository.PatientRepository,
-) PatientValidator {
-	return &patientGrpcValidator{
-		logger:            logger,
-		patientRepository: patientRepository,
-	}
 }

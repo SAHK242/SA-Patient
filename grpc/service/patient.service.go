@@ -17,13 +17,75 @@ import (
 )
 
 type patientGrpcService struct {
-	config               config.Config
-	client               *ent.Client
-	logger               *zap.SugaredLogger
-	redis                *redis.Client
-	patientRepository    repository.PatientRepository
-	patientGrpcMapper    mapper.PatientGrpcMapper
-	patientGrpcValidator validator.PatientValidator
+	config                        config.Config
+	client                        *ent.Client
+	logger                        *zap.SugaredLogger
+	redis                         *redis.Client
+	medicalHistoriesRepository    repository.MedicalHistoriesRepository
+	medicalHistoryGrpcMapper      mapper.MedicalHistoryGrpcMapper
+	medicalTreatmentGrpcMapper    mapper.MedicalTreatmentGrpcMapper
+	medicalSurgeryGrpcMapper      mapper.MedicalSurgeryGrpcMapper
+	medicalPrescriptionGrpcMapper mapper.MedicalPrescriptionGrpcMapper
+	patientRepository             repository.PatientRepository
+	patientGrpcMapper             mapper.PatientGrpcMapper
+	patientGrpcValidator          validator.PatientValidator
+	medicalTreatmentRepository    repository.MedicalTreatmentRepository
+	medicalSurgeryRepository      repository.MedicalSurgeryRepository
+	medicalPrescriptionRepository repository.MedicalPrescriptionRepository
+	medicalPrescriptionValidator  validator.MedicalPrescriptionValidator
+	medicalHistoryValidator       validator.MedicalRecordValidator
+	medicalTreatmentValidator     validator.MedicalTreatmentValidator
+	medicalSurgeryValidator       validator.MedicalSurgeryValidator
+}
+
+func NewPatientGrpcService(
+	redis *redis.Client,
+	client *ent.Client,
+	logger *zap.SugaredLogger,
+	config config.Config,
+	medicalHistoriesRepository repository.MedicalHistoriesRepository,
+	medicalHistoryGrpcMapper mapper.MedicalHistoryGrpcMapper,
+	medicalTreatmentGrpcMapper mapper.MedicalTreatmentGrpcMapper,
+	medicalSurgeryGrpcMapper mapper.MedicalSurgeryGrpcMapper,
+	medicalPrescriptionGrpcMapper mapper.MedicalPrescriptionGrpcMapper,
+	patientRepository repository.PatientRepository,
+	patientGrpcMapper mapper.PatientGrpcMapper,
+	patientGrpcValidator validator.PatientValidator,
+	medicalTreatmentRepository repository.MedicalTreatmentRepository,
+	medicalSurgeryRepository repository.MedicalSurgeryRepository,
+	medicalPrescriptionRepository repository.MedicalPrescriptionRepository,
+) PatientGrpcService {
+	return &patientGrpcService{
+		redis:                         redis,
+		client:                        client,
+		logger:                        logger,
+		config:                        config,
+		medicalHistoriesRepository:    medicalHistoriesRepository,
+		medicalHistoryGrpcMapper:      medicalHistoryGrpcMapper,
+		medicalTreatmentGrpcMapper:    medicalTreatmentGrpcMapper,
+		medicalSurgeryGrpcMapper:      medicalSurgeryGrpcMapper,
+		medicalPrescriptionGrpcMapper: medicalPrescriptionGrpcMapper,
+		patientRepository:             patientRepository,
+		patientGrpcMapper:             patientGrpcMapper,
+		patientGrpcValidator:          patientGrpcValidator,
+		medicalTreatmentRepository:    medicalTreatmentRepository,
+		medicalSurgeryRepository:      medicalSurgeryRepository,
+		medicalPrescriptionRepository: medicalPrescriptionRepository,
+	}
+}
+
+func (s *patientGrpcService) GetMedicalHistoryDetail(ctx context.Context, request *gcommon.IdRequest) (*patient.GetMedicalHistoryDetailResponse, error) {
+	medicalHistory, err := s.medicalHistoriesRepository.FindMedicalHistoryById(ctx, uuid.MustParse(request.Id))
+	if err != nil {
+		return nil, fmt.Errorf("error while finding medical history: %v", err)
+	}
+
+	return &patient.GetMedicalHistoryDetailResponse{
+		MedicalHistory:       s.medicalHistoryGrpcMapper.ConvertMedicalHistory(medicalHistory),
+		MedicalTreatments:    s.medicalTreatmentGrpcMapper.ConvertMedicalTreatmentSlice(medicalHistory.Edges.MedicalTreatment),
+		MedicalSurgeries:     s.medicalSurgeryGrpcMapper.ConvertMedicalSurgerySlice(medicalHistory.Edges.MedicalSurgery),
+		MedicalPrescriptions: s.medicalPrescriptionGrpcMapper.ConvertMedicalPrescriptionSlice(medicalHistory.Edges.MedicalPrescription),
+	}, nil
 }
 
 func (s *patientGrpcService) GetPatient(ctx context.Context, request *gcommon.IdRequest) (*patient.GetPatientResponse, error) {
@@ -33,7 +95,91 @@ func (s *patientGrpcService) GetPatient(ctx context.Context, request *gcommon.Id
 	}
 
 	return &patient.GetPatientResponse{
-		PatientDetail: s.patientGrpcMapper.ConvertPatient(patientById),
+		Patient: s.patientGrpcMapper.ConvertPatient(patientById),
+	}, nil
+}
+
+func (s *patientGrpcService) UpsertMedicalRecord(ctx context.Context, request *patient.UpsertMedicalRecordRequest) (*gcommon.EmptyResponse, error) {
+	err := s.medicalHistoryValidator.ValidateUpsertMedicalRecordRequest(ctx, request)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = withTransaction(ctx, s.client, func(tx *ent.Tx) error {
+		return s.medicalHistoriesRepository.UpsertMedicalRecord(ctx, tx, request)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &gcommon.EmptyResponse{}, nil
+}
+
+func (s *patientGrpcService) UpsertMedicalTreatment(ctx context.Context, request *patient.UpsertMedicalTreatmentRequest) (*gcommon.EmptyResponse, error) {
+	err := s.medicalTreatmentValidator.ValidateUpsertMedicalTreatmentRequest(ctx, request)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = withTransaction(ctx, s.client, func(tx *ent.Tx) error {
+		return s.medicalTreatmentRepository.UpsertMedicalTreatment(ctx, tx, request)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &gcommon.EmptyResponse{}, nil
+}
+
+func (s *patientGrpcService) UpsertMedicalSurgery(ctx context.Context, request *patient.UpsertMedicalSurgeryRequest) (*gcommon.EmptyResponse, error) {
+	err := s.medicalSurgeryValidator.ValidateUpsertMedicalSurgeryRequest(ctx, request)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = withTransaction(ctx, s.client, func(tx *ent.Tx) error {
+		return s.medicalSurgeryRepository.UpsertMedicalSurgery(ctx, tx, request)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &gcommon.EmptyResponse{}, nil
+}
+
+func (s *patientGrpcService) UpsertMedicalPrescription(ctx context.Context, request *patient.UpsertMedicalPrescriptionRequest) (*gcommon.EmptyResponse, error) {
+	err := s.medicalPrescriptionValidator.ValidateUpsertMedicalPrescriptionRequest(ctx, request)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = withTransaction(ctx, s.client, func(tx *ent.Tx) error {
+		return s.medicalPrescriptionRepository.UpsertMedicalPrescription(ctx, tx, request)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &gcommon.EmptyResponse{}, nil
+}
+
+func (s *patientGrpcService) GetMedicalHistory(ctx context.Context, request *patient.GetMedicalHistoryRequest) (*patient.GetMedicalHistoryResponse, error) {
+	medicalHistories, total, err := s.medicalHistoriesRepository.FindMedicalHistories(ctx, request)
+	if err != nil {
+		return nil, fmt.Errorf("error while finding medical history: %v", err)
+	}
+
+	return &patient.GetMedicalHistoryResponse{
+		PageMetadata:     grpcutil.AsPageMetadata(request.Pageable, total),
+		MedicalHistories: s.medicalHistoryGrpcMapper.ConvertMedicalHistorySlice(medicalHistories),
 	}, nil
 }
 
@@ -62,27 +208,7 @@ func (s *patientGrpcService) ListPatient(ctx context.Context, request *patient.L
 	}
 
 	return &patient.ListPatientResponse{
-		PageMetadata:   grpcutil.AsPageMetadata(request.Pageable, total),
-		PatientDetails: s.patientGrpcMapper.ConvertPatientSlice(patients),
+		PageMetadata: grpcutil.AsPageMetadata(request.Pageable, total),
+		Patients:     s.patientGrpcMapper.ConvertPatientSlice(patients),
 	}, nil
-}
-
-func NewPatientGrpcService(
-	redis *redis.Client,
-	patientRepository repository.PatientRepository,
-	client *ent.Client,
-	logger *zap.SugaredLogger,
-	config config.Config,
-	patientGrpcMapper mapper.PatientGrpcMapper,
-	patientGrpcValidator validator.PatientValidator,
-) PatientGrpcService {
-	return &patientGrpcService{
-		redis:                redis,
-		patientRepository:    patientRepository,
-		client:               client,
-		logger:               logger,
-		config:               config,
-		patientGrpcMapper:    patientGrpcMapper,
-		patientGrpcValidator: patientGrpcValidator,
-	}
 }

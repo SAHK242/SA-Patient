@@ -7,8 +7,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"math"
-	"patient/ent/inpatient"
-	"patient/ent/outpatient"
+	"patient/ent/medicalhistories"
 	"patient/ent/patient"
 	"patient/ent/predicate"
 
@@ -22,12 +21,11 @@ import (
 // PatientQuery is the builder for querying Patient entities.
 type PatientQuery struct {
 	config
-	ctx             *QueryContext
-	order           []patient.OrderOption
-	inters          []Interceptor
-	predicates      []predicate.Patient
-	withInpatients  *InpatientQuery
-	withOutpatients *OutpatientQuery
+	ctx                *QueryContext
+	order              []patient.OrderOption
+	inters             []Interceptor
+	predicates         []predicate.Patient
+	withMedicalHistory *MedicalHistoriesQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -64,9 +62,9 @@ func (pq *PatientQuery) Order(o ...patient.OrderOption) *PatientQuery {
 	return pq
 }
 
-// QueryInpatients chains the current query on the "inpatients" edge.
-func (pq *PatientQuery) QueryInpatients() *InpatientQuery {
-	query := (&InpatientClient{config: pq.config}).Query()
+// QueryMedicalHistory chains the current query on the "medical_history" edge.
+func (pq *PatientQuery) QueryMedicalHistory() *MedicalHistoriesQuery {
+	query := (&MedicalHistoriesClient{config: pq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -77,30 +75,8 @@ func (pq *PatientQuery) QueryInpatients() *InpatientQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(patient.Table, patient.FieldID, selector),
-			sqlgraph.To(inpatient.Table, inpatient.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, patient.InpatientsTable, patient.InpatientsColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryOutpatients chains the current query on the "outpatients" edge.
-func (pq *PatientQuery) QueryOutpatients() *OutpatientQuery {
-	query := (&OutpatientClient{config: pq.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := pq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := pq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(patient.Table, patient.FieldID, selector),
-			sqlgraph.To(outpatient.Table, outpatient.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, patient.OutpatientsTable, patient.OutpatientsColumn),
+			sqlgraph.To(medicalhistories.Table, medicalhistories.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, patient.MedicalHistoryTable, patient.MedicalHistoryColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -295,38 +271,26 @@ func (pq *PatientQuery) Clone() *PatientQuery {
 		return nil
 	}
 	return &PatientQuery{
-		config:          pq.config,
-		ctx:             pq.ctx.Clone(),
-		order:           append([]patient.OrderOption{}, pq.order...),
-		inters:          append([]Interceptor{}, pq.inters...),
-		predicates:      append([]predicate.Patient{}, pq.predicates...),
-		withInpatients:  pq.withInpatients.Clone(),
-		withOutpatients: pq.withOutpatients.Clone(),
+		config:             pq.config,
+		ctx:                pq.ctx.Clone(),
+		order:              append([]patient.OrderOption{}, pq.order...),
+		inters:             append([]Interceptor{}, pq.inters...),
+		predicates:         append([]predicate.Patient{}, pq.predicates...),
+		withMedicalHistory: pq.withMedicalHistory.Clone(),
 		// clone intermediate query.
 		sql:  pq.sql.Clone(),
 		path: pq.path,
 	}
 }
 
-// WithInpatients tells the query-builder to eager-load the nodes that are connected to
-// the "inpatients" edge. The optional arguments are used to configure the query builder of the edge.
-func (pq *PatientQuery) WithInpatients(opts ...func(*InpatientQuery)) *PatientQuery {
-	query := (&InpatientClient{config: pq.config}).Query()
+// WithMedicalHistory tells the query-builder to eager-load the nodes that are connected to
+// the "medical_history" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *PatientQuery) WithMedicalHistory(opts ...func(*MedicalHistoriesQuery)) *PatientQuery {
+	query := (&MedicalHistoriesClient{config: pq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	pq.withInpatients = query
-	return pq
-}
-
-// WithOutpatients tells the query-builder to eager-load the nodes that are connected to
-// the "outpatients" edge. The optional arguments are used to configure the query builder of the edge.
-func (pq *PatientQuery) WithOutpatients(opts ...func(*OutpatientQuery)) *PatientQuery {
-	query := (&OutpatientClient{config: pq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	pq.withOutpatients = query
+	pq.withMedicalHistory = query
 	return pq
 }
 
@@ -336,12 +300,12 @@ func (pq *PatientQuery) WithOutpatients(opts ...func(*OutpatientQuery)) *Patient
 // Example:
 //
 //	var v []struct {
-//		PhoneNumber string `json:"phone_number,omitempty"`
+//		Phone string `json:"phone,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Patient.Query().
-//		GroupBy(patient.FieldPhoneNumber).
+//		GroupBy(patient.FieldPhone).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (pq *PatientQuery) GroupBy(field string, fields ...string) *PatientGroupBy {
@@ -359,11 +323,11 @@ func (pq *PatientQuery) GroupBy(field string, fields ...string) *PatientGroupBy 
 // Example:
 //
 //	var v []struct {
-//		PhoneNumber string `json:"phone_number,omitempty"`
+//		Phone string `json:"phone,omitempty"`
 //	}
 //
 //	client.Patient.Query().
-//		Select(patient.FieldPhoneNumber).
+//		Select(patient.FieldPhone).
 //		Scan(ctx, &v)
 func (pq *PatientQuery) Select(fields ...string) *PatientSelect {
 	pq.ctx.Fields = append(pq.ctx.Fields, fields...)
@@ -408,9 +372,8 @@ func (pq *PatientQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Pati
 	var (
 		nodes       = []*Patient{}
 		_spec       = pq.querySpec()
-		loadedTypes = [2]bool{
-			pq.withInpatients != nil,
-			pq.withOutpatients != nil,
+		loadedTypes = [1]bool{
+			pq.withMedicalHistory != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -431,24 +394,17 @@ func (pq *PatientQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Pati
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := pq.withInpatients; query != nil {
-		if err := pq.loadInpatients(ctx, query, nodes,
-			func(n *Patient) { n.Edges.Inpatients = []*Inpatient{} },
-			func(n *Patient, e *Inpatient) { n.Edges.Inpatients = append(n.Edges.Inpatients, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := pq.withOutpatients; query != nil {
-		if err := pq.loadOutpatients(ctx, query, nodes,
-			func(n *Patient) { n.Edges.Outpatients = []*Outpatient{} },
-			func(n *Patient, e *Outpatient) { n.Edges.Outpatients = append(n.Edges.Outpatients, e) }); err != nil {
+	if query := pq.withMedicalHistory; query != nil {
+		if err := pq.loadMedicalHistory(ctx, query, nodes,
+			func(n *Patient) { n.Edges.MedicalHistory = []*MedicalHistories{} },
+			func(n *Patient, e *MedicalHistories) { n.Edges.MedicalHistory = append(n.Edges.MedicalHistory, e) }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (pq *PatientQuery) loadInpatients(ctx context.Context, query *InpatientQuery, nodes []*Patient, init func(*Patient), assign func(*Patient, *Inpatient)) error {
+func (pq *PatientQuery) loadMedicalHistory(ctx context.Context, query *MedicalHistoriesQuery, nodes []*Patient, init func(*Patient), assign func(*Patient, *MedicalHistories)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Patient)
 	for i := range nodes {
@@ -459,40 +415,10 @@ func (pq *PatientQuery) loadInpatients(ctx context.Context, query *InpatientQuer
 		}
 	}
 	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(inpatient.FieldPatientID)
+		query.ctx.AppendFieldOnce(medicalhistories.FieldPatientID)
 	}
-	query.Where(predicate.Inpatient(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(patient.InpatientsColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.PatientID
-		node, ok := nodeids[fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "patient_id" returned %v for node %v`, fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (pq *PatientQuery) loadOutpatients(ctx context.Context, query *OutpatientQuery, nodes []*Patient, init func(*Patient), assign func(*Patient, *Outpatient)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Patient)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(outpatient.FieldPatientID)
-	}
-	query.Where(predicate.Outpatient(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(patient.OutpatientsColumn), fks...))
+	query.Where(predicate.MedicalHistories(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(patient.MedicalHistoryColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

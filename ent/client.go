@@ -11,18 +11,13 @@ import (
 
 	"patient/ent/migrate"
 
-	"patient/ent/examinedetail"
-	"patient/ent/examinemedication"
-	"patient/ent/inpatient"
-	"patient/ent/inpatientdetail"
-	"patient/ent/invoice"
+	"patient/ent/medicalhistories"
+	"patient/ent/medicalprescription"
+	"patient/ent/medicalsurgery"
+	"patient/ent/medicaltreatment"
 	"patient/ent/medication"
-	"patient/ent/medicationeffect"
-	"patient/ent/outpatient"
-	"patient/ent/outpatientdetail"
 	"patient/ent/patient"
-	"patient/ent/treatdetail"
-	"patient/ent/treatmedication"
+	"patient/ent/prescriptionmedication"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
@@ -36,30 +31,20 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
-	// ExamineDetail is the client for interacting with the ExamineDetail builders.
-	ExamineDetail *ExamineDetailClient
-	// ExamineMedication is the client for interacting with the ExamineMedication builders.
-	ExamineMedication *ExamineMedicationClient
-	// Inpatient is the client for interacting with the Inpatient builders.
-	Inpatient *InpatientClient
-	// InpatientDetail is the client for interacting with the InpatientDetail builders.
-	InpatientDetail *InpatientDetailClient
-	// Invoice is the client for interacting with the Invoice builders.
-	Invoice *InvoiceClient
+	// MedicalHistories is the client for interacting with the MedicalHistories builders.
+	MedicalHistories *MedicalHistoriesClient
+	// MedicalPrescription is the client for interacting with the MedicalPrescription builders.
+	MedicalPrescription *MedicalPrescriptionClient
+	// MedicalSurgery is the client for interacting with the MedicalSurgery builders.
+	MedicalSurgery *MedicalSurgeryClient
+	// MedicalTreatment is the client for interacting with the MedicalTreatment builders.
+	MedicalTreatment *MedicalTreatmentClient
 	// Medication is the client for interacting with the Medication builders.
 	Medication *MedicationClient
-	// MedicationEffect is the client for interacting with the MedicationEffect builders.
-	MedicationEffect *MedicationEffectClient
-	// Outpatient is the client for interacting with the Outpatient builders.
-	Outpatient *OutpatientClient
-	// OutpatientDetail is the client for interacting with the OutpatientDetail builders.
-	OutpatientDetail *OutpatientDetailClient
 	// Patient is the client for interacting with the Patient builders.
 	Patient *PatientClient
-	// TreatDetail is the client for interacting with the TreatDetail builders.
-	TreatDetail *TreatDetailClient
-	// TreatMedication is the client for interacting with the TreatMedication builders.
-	TreatMedication *TreatMedicationClient
+	// PrescriptionMedication is the client for interacting with the PrescriptionMedication builders.
+	PrescriptionMedication *PrescriptionMedicationClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -71,18 +56,13 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
-	c.ExamineDetail = NewExamineDetailClient(c.config)
-	c.ExamineMedication = NewExamineMedicationClient(c.config)
-	c.Inpatient = NewInpatientClient(c.config)
-	c.InpatientDetail = NewInpatientDetailClient(c.config)
-	c.Invoice = NewInvoiceClient(c.config)
+	c.MedicalHistories = NewMedicalHistoriesClient(c.config)
+	c.MedicalPrescription = NewMedicalPrescriptionClient(c.config)
+	c.MedicalSurgery = NewMedicalSurgeryClient(c.config)
+	c.MedicalTreatment = NewMedicalTreatmentClient(c.config)
 	c.Medication = NewMedicationClient(c.config)
-	c.MedicationEffect = NewMedicationEffectClient(c.config)
-	c.Outpatient = NewOutpatientClient(c.config)
-	c.OutpatientDetail = NewOutpatientDetailClient(c.config)
 	c.Patient = NewPatientClient(c.config)
-	c.TreatDetail = NewTreatDetailClient(c.config)
-	c.TreatMedication = NewTreatMedicationClient(c.config)
+	c.PrescriptionMedication = NewPrescriptionMedicationClient(c.config)
 }
 
 type (
@@ -173,20 +153,15 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:               ctx,
-		config:            cfg,
-		ExamineDetail:     NewExamineDetailClient(cfg),
-		ExamineMedication: NewExamineMedicationClient(cfg),
-		Inpatient:         NewInpatientClient(cfg),
-		InpatientDetail:   NewInpatientDetailClient(cfg),
-		Invoice:           NewInvoiceClient(cfg),
-		Medication:        NewMedicationClient(cfg),
-		MedicationEffect:  NewMedicationEffectClient(cfg),
-		Outpatient:        NewOutpatientClient(cfg),
-		OutpatientDetail:  NewOutpatientDetailClient(cfg),
-		Patient:           NewPatientClient(cfg),
-		TreatDetail:       NewTreatDetailClient(cfg),
-		TreatMedication:   NewTreatMedicationClient(cfg),
+		ctx:                    ctx,
+		config:                 cfg,
+		MedicalHistories:       NewMedicalHistoriesClient(cfg),
+		MedicalPrescription:    NewMedicalPrescriptionClient(cfg),
+		MedicalSurgery:         NewMedicalSurgeryClient(cfg),
+		MedicalTreatment:       NewMedicalTreatmentClient(cfg),
+		Medication:             NewMedicationClient(cfg),
+		Patient:                NewPatientClient(cfg),
+		PrescriptionMedication: NewPrescriptionMedicationClient(cfg),
 	}, nil
 }
 
@@ -204,27 +179,22 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:               ctx,
-		config:            cfg,
-		ExamineDetail:     NewExamineDetailClient(cfg),
-		ExamineMedication: NewExamineMedicationClient(cfg),
-		Inpatient:         NewInpatientClient(cfg),
-		InpatientDetail:   NewInpatientDetailClient(cfg),
-		Invoice:           NewInvoiceClient(cfg),
-		Medication:        NewMedicationClient(cfg),
-		MedicationEffect:  NewMedicationEffectClient(cfg),
-		Outpatient:        NewOutpatientClient(cfg),
-		OutpatientDetail:  NewOutpatientDetailClient(cfg),
-		Patient:           NewPatientClient(cfg),
-		TreatDetail:       NewTreatDetailClient(cfg),
-		TreatMedication:   NewTreatMedicationClient(cfg),
+		ctx:                    ctx,
+		config:                 cfg,
+		MedicalHistories:       NewMedicalHistoriesClient(cfg),
+		MedicalPrescription:    NewMedicalPrescriptionClient(cfg),
+		MedicalSurgery:         NewMedicalSurgeryClient(cfg),
+		MedicalTreatment:       NewMedicalTreatmentClient(cfg),
+		Medication:             NewMedicationClient(cfg),
+		Patient:                NewPatientClient(cfg),
+		PrescriptionMedication: NewPrescriptionMedicationClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		ExamineDetail.
+//		MedicalHistories.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -247,9 +217,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.ExamineDetail, c.ExamineMedication, c.Inpatient, c.InpatientDetail, c.Invoice,
-		c.Medication, c.MedicationEffect, c.Outpatient, c.OutpatientDetail, c.Patient,
-		c.TreatDetail, c.TreatMedication,
+		c.MedicalHistories, c.MedicalPrescription, c.MedicalSurgery, c.MedicalTreatment,
+		c.Medication, c.Patient, c.PrescriptionMedication,
 	} {
 		n.Use(hooks...)
 	}
@@ -259,9 +228,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.ExamineDetail, c.ExamineMedication, c.Inpatient, c.InpatientDetail, c.Invoice,
-		c.Medication, c.MedicationEffect, c.Outpatient, c.OutpatientDetail, c.Patient,
-		c.TreatDetail, c.TreatMedication,
+		c.MedicalHistories, c.MedicalPrescription, c.MedicalSurgery, c.MedicalTreatment,
+		c.Medication, c.Patient, c.PrescriptionMedication,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -270,136 +238,126 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
-	case *ExamineDetailMutation:
-		return c.ExamineDetail.mutate(ctx, m)
-	case *ExamineMedicationMutation:
-		return c.ExamineMedication.mutate(ctx, m)
-	case *InpatientMutation:
-		return c.Inpatient.mutate(ctx, m)
-	case *InpatientDetailMutation:
-		return c.InpatientDetail.mutate(ctx, m)
-	case *InvoiceMutation:
-		return c.Invoice.mutate(ctx, m)
+	case *MedicalHistoriesMutation:
+		return c.MedicalHistories.mutate(ctx, m)
+	case *MedicalPrescriptionMutation:
+		return c.MedicalPrescription.mutate(ctx, m)
+	case *MedicalSurgeryMutation:
+		return c.MedicalSurgery.mutate(ctx, m)
+	case *MedicalTreatmentMutation:
+		return c.MedicalTreatment.mutate(ctx, m)
 	case *MedicationMutation:
 		return c.Medication.mutate(ctx, m)
-	case *MedicationEffectMutation:
-		return c.MedicationEffect.mutate(ctx, m)
-	case *OutpatientMutation:
-		return c.Outpatient.mutate(ctx, m)
-	case *OutpatientDetailMutation:
-		return c.OutpatientDetail.mutate(ctx, m)
 	case *PatientMutation:
 		return c.Patient.mutate(ctx, m)
-	case *TreatDetailMutation:
-		return c.TreatDetail.mutate(ctx, m)
-	case *TreatMedicationMutation:
-		return c.TreatMedication.mutate(ctx, m)
+	case *PrescriptionMedicationMutation:
+		return c.PrescriptionMedication.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
 }
 
-// ExamineDetailClient is a client for the ExamineDetail schema.
-type ExamineDetailClient struct {
+// MedicalHistoriesClient is a client for the MedicalHistories schema.
+type MedicalHistoriesClient struct {
 	config
 }
 
-// NewExamineDetailClient returns a client for the ExamineDetail from the given config.
-func NewExamineDetailClient(c config) *ExamineDetailClient {
-	return &ExamineDetailClient{config: c}
+// NewMedicalHistoriesClient returns a client for the MedicalHistories from the given config.
+func NewMedicalHistoriesClient(c config) *MedicalHistoriesClient {
+	return &MedicalHistoriesClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `examinedetail.Hooks(f(g(h())))`.
-func (c *ExamineDetailClient) Use(hooks ...Hook) {
-	c.hooks.ExamineDetail = append(c.hooks.ExamineDetail, hooks...)
+// A call to `Use(f, g, h)` equals to `medicalhistories.Hooks(f(g(h())))`.
+func (c *MedicalHistoriesClient) Use(hooks ...Hook) {
+	c.hooks.MedicalHistories = append(c.hooks.MedicalHistories, hooks...)
 }
 
 // Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `examinedetail.Intercept(f(g(h())))`.
-func (c *ExamineDetailClient) Intercept(interceptors ...Interceptor) {
-	c.inters.ExamineDetail = append(c.inters.ExamineDetail, interceptors...)
+// A call to `Intercept(f, g, h)` equals to `medicalhistories.Intercept(f(g(h())))`.
+func (c *MedicalHistoriesClient) Intercept(interceptors ...Interceptor) {
+	c.inters.MedicalHistories = append(c.inters.MedicalHistories, interceptors...)
 }
 
-// Create returns a builder for creating a ExamineDetail entity.
-func (c *ExamineDetailClient) Create() *ExamineDetailCreate {
-	mutation := newExamineDetailMutation(c.config, OpCreate)
-	return &ExamineDetailCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a MedicalHistories entity.
+func (c *MedicalHistoriesClient) Create() *MedicalHistoriesCreate {
+	mutation := newMedicalHistoriesMutation(c.config, OpCreate)
+	return &MedicalHistoriesCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of ExamineDetail entities.
-func (c *ExamineDetailClient) CreateBulk(builders ...*ExamineDetailCreate) *ExamineDetailCreateBulk {
-	return &ExamineDetailCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of MedicalHistories entities.
+func (c *MedicalHistoriesClient) CreateBulk(builders ...*MedicalHistoriesCreate) *MedicalHistoriesCreateBulk {
+	return &MedicalHistoriesCreateBulk{config: c.config, builders: builders}
 }
 
 // MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
 // a builder and applies setFunc on it.
-func (c *ExamineDetailClient) MapCreateBulk(slice any, setFunc func(*ExamineDetailCreate, int)) *ExamineDetailCreateBulk {
+func (c *MedicalHistoriesClient) MapCreateBulk(slice any, setFunc func(*MedicalHistoriesCreate, int)) *MedicalHistoriesCreateBulk {
 	rv := reflect.ValueOf(slice)
 	if rv.Kind() != reflect.Slice {
-		return &ExamineDetailCreateBulk{err: fmt.Errorf("calling to ExamineDetailClient.MapCreateBulk with wrong type %T, need slice", slice)}
+		return &MedicalHistoriesCreateBulk{err: fmt.Errorf("calling to MedicalHistoriesClient.MapCreateBulk with wrong type %T, need slice", slice)}
 	}
-	builders := make([]*ExamineDetailCreate, rv.Len())
+	builders := make([]*MedicalHistoriesCreate, rv.Len())
 	for i := 0; i < rv.Len(); i++ {
 		builders[i] = c.Create()
 		setFunc(builders[i], i)
 	}
-	return &ExamineDetailCreateBulk{config: c.config, builders: builders}
+	return &MedicalHistoriesCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for ExamineDetail.
-func (c *ExamineDetailClient) Update() *ExamineDetailUpdate {
-	mutation := newExamineDetailMutation(c.config, OpUpdate)
-	return &ExamineDetailUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for MedicalHistories.
+func (c *MedicalHistoriesClient) Update() *MedicalHistoriesUpdate {
+	mutation := newMedicalHistoriesMutation(c.config, OpUpdate)
+	return &MedicalHistoriesUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *ExamineDetailClient) UpdateOne(ed *ExamineDetail) *ExamineDetailUpdateOne {
-	mutation := newExamineDetailMutation(c.config, OpUpdateOne, withExamineDetail(ed))
-	return &ExamineDetailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *MedicalHistoriesClient) UpdateOne(mh *MedicalHistories) *MedicalHistoriesUpdateOne {
+	mutation := newMedicalHistoriesMutation(c.config, OpUpdateOne, withMedicalHistories(mh))
+	return &MedicalHistoriesUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *ExamineDetailClient) UpdateOneID(id int) *ExamineDetailUpdateOne {
-	mutation := newExamineDetailMutation(c.config, OpUpdateOne, withExamineDetailID(id))
-	return &ExamineDetailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *MedicalHistoriesClient) UpdateOneID(id uuid.UUID) *MedicalHistoriesUpdateOne {
+	mutation := newMedicalHistoriesMutation(c.config, OpUpdateOne, withMedicalHistoriesID(id))
+	return &MedicalHistoriesUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for ExamineDetail.
-func (c *ExamineDetailClient) Delete() *ExamineDetailDelete {
-	mutation := newExamineDetailMutation(c.config, OpDelete)
-	return &ExamineDetailDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for MedicalHistories.
+func (c *MedicalHistoriesClient) Delete() *MedicalHistoriesDelete {
+	mutation := newMedicalHistoriesMutation(c.config, OpDelete)
+	return &MedicalHistoriesDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *ExamineDetailClient) DeleteOne(ed *ExamineDetail) *ExamineDetailDeleteOne {
-	return c.DeleteOneID(ed.ID)
+func (c *MedicalHistoriesClient) DeleteOne(mh *MedicalHistories) *MedicalHistoriesDeleteOne {
+	return c.DeleteOneID(mh.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *ExamineDetailClient) DeleteOneID(id int) *ExamineDetailDeleteOne {
-	builder := c.Delete().Where(examinedetail.ID(id))
+func (c *MedicalHistoriesClient) DeleteOneID(id uuid.UUID) *MedicalHistoriesDeleteOne {
+	builder := c.Delete().Where(medicalhistories.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &ExamineDetailDeleteOne{builder}
+	return &MedicalHistoriesDeleteOne{builder}
 }
 
-// Query returns a query builder for ExamineDetail.
-func (c *ExamineDetailClient) Query() *ExamineDetailQuery {
-	return &ExamineDetailQuery{
+// Query returns a query builder for MedicalHistories.
+func (c *MedicalHistoriesClient) Query() *MedicalHistoriesQuery {
+	return &MedicalHistoriesQuery{
 		config: c.config,
-		ctx:    &QueryContext{Type: TypeExamineDetail},
+		ctx:    &QueryContext{Type: TypeMedicalHistories},
 		inters: c.Interceptors(),
 	}
 }
 
-// Get returns a ExamineDetail entity by its id.
-func (c *ExamineDetailClient) Get(ctx context.Context, id int) (*ExamineDetail, error) {
-	return c.Query().Where(examinedetail.ID(id)).Only(ctx)
+// Get returns a MedicalHistories entity by its id.
+func (c *MedicalHistoriesClient) Get(ctx context.Context, id uuid.UUID) (*MedicalHistories, error) {
+	return c.Query().Where(medicalhistories.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *ExamineDetailClient) GetX(ctx context.Context, id int) *ExamineDetail {
+func (c *MedicalHistoriesClient) GetX(ctx context.Context, id uuid.UUID) *MedicalHistories {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -407,414 +365,196 @@ func (c *ExamineDetailClient) GetX(ctx context.Context, id int) *ExamineDetail {
 	return obj
 }
 
-// Hooks returns the client hooks.
-func (c *ExamineDetailClient) Hooks() []Hook {
-	return c.hooks.ExamineDetail
-}
-
-// Interceptors returns the client interceptors.
-func (c *ExamineDetailClient) Interceptors() []Interceptor {
-	return c.inters.ExamineDetail
-}
-
-func (c *ExamineDetailClient) mutate(ctx context.Context, m *ExamineDetailMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&ExamineDetailCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&ExamineDetailUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&ExamineDetailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&ExamineDetailDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown ExamineDetail mutation op: %q", m.Op())
-	}
-}
-
-// ExamineMedicationClient is a client for the ExamineMedication schema.
-type ExamineMedicationClient struct {
-	config
-}
-
-// NewExamineMedicationClient returns a client for the ExamineMedication from the given config.
-func NewExamineMedicationClient(c config) *ExamineMedicationClient {
-	return &ExamineMedicationClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `examinemedication.Hooks(f(g(h())))`.
-func (c *ExamineMedicationClient) Use(hooks ...Hook) {
-	c.hooks.ExamineMedication = append(c.hooks.ExamineMedication, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `examinemedication.Intercept(f(g(h())))`.
-func (c *ExamineMedicationClient) Intercept(interceptors ...Interceptor) {
-	c.inters.ExamineMedication = append(c.inters.ExamineMedication, interceptors...)
-}
-
-// Create returns a builder for creating a ExamineMedication entity.
-func (c *ExamineMedicationClient) Create() *ExamineMedicationCreate {
-	mutation := newExamineMedicationMutation(c.config, OpCreate)
-	return &ExamineMedicationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of ExamineMedication entities.
-func (c *ExamineMedicationClient) CreateBulk(builders ...*ExamineMedicationCreate) *ExamineMedicationCreateBulk {
-	return &ExamineMedicationCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *ExamineMedicationClient) MapCreateBulk(slice any, setFunc func(*ExamineMedicationCreate, int)) *ExamineMedicationCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &ExamineMedicationCreateBulk{err: fmt.Errorf("calling to ExamineMedicationClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*ExamineMedicationCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &ExamineMedicationCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for ExamineMedication.
-func (c *ExamineMedicationClient) Update() *ExamineMedicationUpdate {
-	mutation := newExamineMedicationMutation(c.config, OpUpdate)
-	return &ExamineMedicationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *ExamineMedicationClient) UpdateOne(em *ExamineMedication) *ExamineMedicationUpdateOne {
-	mutation := newExamineMedicationMutation(c.config, OpUpdateOne, withExamineMedication(em))
-	return &ExamineMedicationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *ExamineMedicationClient) UpdateOneID(id int) *ExamineMedicationUpdateOne {
-	mutation := newExamineMedicationMutation(c.config, OpUpdateOne, withExamineMedicationID(id))
-	return &ExamineMedicationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for ExamineMedication.
-func (c *ExamineMedicationClient) Delete() *ExamineMedicationDelete {
-	mutation := newExamineMedicationMutation(c.config, OpDelete)
-	return &ExamineMedicationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *ExamineMedicationClient) DeleteOne(em *ExamineMedication) *ExamineMedicationDeleteOne {
-	return c.DeleteOneID(em.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *ExamineMedicationClient) DeleteOneID(id int) *ExamineMedicationDeleteOne {
-	builder := c.Delete().Where(examinemedication.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &ExamineMedicationDeleteOne{builder}
-}
-
-// Query returns a query builder for ExamineMedication.
-func (c *ExamineMedicationClient) Query() *ExamineMedicationQuery {
-	return &ExamineMedicationQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeExamineMedication},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a ExamineMedication entity by its id.
-func (c *ExamineMedicationClient) Get(ctx context.Context, id int) (*ExamineMedication, error) {
-	return c.Query().Where(examinemedication.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *ExamineMedicationClient) GetX(ctx context.Context, id int) *ExamineMedication {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *ExamineMedicationClient) Hooks() []Hook {
-	return c.hooks.ExamineMedication
-}
-
-// Interceptors returns the client interceptors.
-func (c *ExamineMedicationClient) Interceptors() []Interceptor {
-	return c.inters.ExamineMedication
-}
-
-func (c *ExamineMedicationClient) mutate(ctx context.Context, m *ExamineMedicationMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&ExamineMedicationCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&ExamineMedicationUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&ExamineMedicationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&ExamineMedicationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown ExamineMedication mutation op: %q", m.Op())
-	}
-}
-
-// InpatientClient is a client for the Inpatient schema.
-type InpatientClient struct {
-	config
-}
-
-// NewInpatientClient returns a client for the Inpatient from the given config.
-func NewInpatientClient(c config) *InpatientClient {
-	return &InpatientClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `inpatient.Hooks(f(g(h())))`.
-func (c *InpatientClient) Use(hooks ...Hook) {
-	c.hooks.Inpatient = append(c.hooks.Inpatient, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `inpatient.Intercept(f(g(h())))`.
-func (c *InpatientClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Inpatient = append(c.inters.Inpatient, interceptors...)
-}
-
-// Create returns a builder for creating a Inpatient entity.
-func (c *InpatientClient) Create() *InpatientCreate {
-	mutation := newInpatientMutation(c.config, OpCreate)
-	return &InpatientCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Inpatient entities.
-func (c *InpatientClient) CreateBulk(builders ...*InpatientCreate) *InpatientCreateBulk {
-	return &InpatientCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *InpatientClient) MapCreateBulk(slice any, setFunc func(*InpatientCreate, int)) *InpatientCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &InpatientCreateBulk{err: fmt.Errorf("calling to InpatientClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*InpatientCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &InpatientCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Inpatient.
-func (c *InpatientClient) Update() *InpatientUpdate {
-	mutation := newInpatientMutation(c.config, OpUpdate)
-	return &InpatientUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *InpatientClient) UpdateOne(i *Inpatient) *InpatientUpdateOne {
-	mutation := newInpatientMutation(c.config, OpUpdateOne, withInpatient(i))
-	return &InpatientUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *InpatientClient) UpdateOneID(id uuid.UUID) *InpatientUpdateOne {
-	mutation := newInpatientMutation(c.config, OpUpdateOne, withInpatientID(id))
-	return &InpatientUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Inpatient.
-func (c *InpatientClient) Delete() *InpatientDelete {
-	mutation := newInpatientMutation(c.config, OpDelete)
-	return &InpatientDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *InpatientClient) DeleteOne(i *Inpatient) *InpatientDeleteOne {
-	return c.DeleteOneID(i.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *InpatientClient) DeleteOneID(id uuid.UUID) *InpatientDeleteOne {
-	builder := c.Delete().Where(inpatient.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &InpatientDeleteOne{builder}
-}
-
-// Query returns a query builder for Inpatient.
-func (c *InpatientClient) Query() *InpatientQuery {
-	return &InpatientQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeInpatient},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a Inpatient entity by its id.
-func (c *InpatientClient) Get(ctx context.Context, id uuid.UUID) (*Inpatient, error) {
-	return c.Query().Where(inpatient.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *InpatientClient) GetX(ctx context.Context, id uuid.UUID) *Inpatient {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryPatient queries the patient edge of a Inpatient.
-func (c *InpatientClient) QueryPatient(i *Inpatient) *PatientQuery {
+// QueryPatient queries the patient edge of a MedicalHistories.
+func (c *MedicalHistoriesClient) QueryPatient(mh *MedicalHistories) *PatientQuery {
 	query := (&PatientClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := i.ID
+		id := mh.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(inpatient.Table, inpatient.FieldID, id),
+			sqlgraph.From(medicalhistories.Table, medicalhistories.FieldID, id),
 			sqlgraph.To(patient.Table, patient.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, inpatient.PatientTable, inpatient.PatientColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, medicalhistories.PatientTable, medicalhistories.PatientColumn),
 		)
-		fromV = sqlgraph.Neighbors(i.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(mh.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryMedicalPrescription queries the medical_prescription edge of a MedicalHistories.
+func (c *MedicalHistoriesClient) QueryMedicalPrescription(mh *MedicalHistories) *MedicalPrescriptionQuery {
+	query := (&MedicalPrescriptionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := mh.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(medicalhistories.Table, medicalhistories.FieldID, id),
+			sqlgraph.To(medicalprescription.Table, medicalprescription.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, medicalhistories.MedicalPrescriptionTable, medicalhistories.MedicalPrescriptionColumn),
+		)
+		fromV = sqlgraph.Neighbors(mh.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryMedicalTreatment queries the medical_treatment edge of a MedicalHistories.
+func (c *MedicalHistoriesClient) QueryMedicalTreatment(mh *MedicalHistories) *MedicalTreatmentQuery {
+	query := (&MedicalTreatmentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := mh.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(medicalhistories.Table, medicalhistories.FieldID, id),
+			sqlgraph.To(medicaltreatment.Table, medicaltreatment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, medicalhistories.MedicalTreatmentTable, medicalhistories.MedicalTreatmentColumn),
+		)
+		fromV = sqlgraph.Neighbors(mh.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryMedicalSurgery queries the medical_surgery edge of a MedicalHistories.
+func (c *MedicalHistoriesClient) QueryMedicalSurgery(mh *MedicalHistories) *MedicalSurgeryQuery {
+	query := (&MedicalSurgeryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := mh.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(medicalhistories.Table, medicalhistories.FieldID, id),
+			sqlgraph.To(medicalsurgery.Table, medicalsurgery.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, medicalhistories.MedicalSurgeryTable, medicalhistories.MedicalSurgeryColumn),
+		)
+		fromV = sqlgraph.Neighbors(mh.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
 }
 
 // Hooks returns the client hooks.
-func (c *InpatientClient) Hooks() []Hook {
-	return c.hooks.Inpatient
+func (c *MedicalHistoriesClient) Hooks() []Hook {
+	return c.hooks.MedicalHistories
 }
 
 // Interceptors returns the client interceptors.
-func (c *InpatientClient) Interceptors() []Interceptor {
-	return c.inters.Inpatient
+func (c *MedicalHistoriesClient) Interceptors() []Interceptor {
+	return c.inters.MedicalHistories
 }
 
-func (c *InpatientClient) mutate(ctx context.Context, m *InpatientMutation) (Value, error) {
+func (c *MedicalHistoriesClient) mutate(ctx context.Context, m *MedicalHistoriesMutation) (Value, error) {
 	switch m.Op() {
 	case OpCreate:
-		return (&InpatientCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&MedicalHistoriesCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdate:
-		return (&InpatientUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&MedicalHistoriesUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdateOne:
-		return (&InpatientUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&MedicalHistoriesUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpDelete, OpDeleteOne:
-		return (&InpatientDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+		return (&MedicalHistoriesDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
-		return nil, fmt.Errorf("ent: unknown Inpatient mutation op: %q", m.Op())
+		return nil, fmt.Errorf("ent: unknown MedicalHistories mutation op: %q", m.Op())
 	}
 }
 
-// InpatientDetailClient is a client for the InpatientDetail schema.
-type InpatientDetailClient struct {
+// MedicalPrescriptionClient is a client for the MedicalPrescription schema.
+type MedicalPrescriptionClient struct {
 	config
 }
 
-// NewInpatientDetailClient returns a client for the InpatientDetail from the given config.
-func NewInpatientDetailClient(c config) *InpatientDetailClient {
-	return &InpatientDetailClient{config: c}
+// NewMedicalPrescriptionClient returns a client for the MedicalPrescription from the given config.
+func NewMedicalPrescriptionClient(c config) *MedicalPrescriptionClient {
+	return &MedicalPrescriptionClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `inpatientdetail.Hooks(f(g(h())))`.
-func (c *InpatientDetailClient) Use(hooks ...Hook) {
-	c.hooks.InpatientDetail = append(c.hooks.InpatientDetail, hooks...)
+// A call to `Use(f, g, h)` equals to `medicalprescription.Hooks(f(g(h())))`.
+func (c *MedicalPrescriptionClient) Use(hooks ...Hook) {
+	c.hooks.MedicalPrescription = append(c.hooks.MedicalPrescription, hooks...)
 }
 
 // Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `inpatientdetail.Intercept(f(g(h())))`.
-func (c *InpatientDetailClient) Intercept(interceptors ...Interceptor) {
-	c.inters.InpatientDetail = append(c.inters.InpatientDetail, interceptors...)
+// A call to `Intercept(f, g, h)` equals to `medicalprescription.Intercept(f(g(h())))`.
+func (c *MedicalPrescriptionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.MedicalPrescription = append(c.inters.MedicalPrescription, interceptors...)
 }
 
-// Create returns a builder for creating a InpatientDetail entity.
-func (c *InpatientDetailClient) Create() *InpatientDetailCreate {
-	mutation := newInpatientDetailMutation(c.config, OpCreate)
-	return &InpatientDetailCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a MedicalPrescription entity.
+func (c *MedicalPrescriptionClient) Create() *MedicalPrescriptionCreate {
+	mutation := newMedicalPrescriptionMutation(c.config, OpCreate)
+	return &MedicalPrescriptionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of InpatientDetail entities.
-func (c *InpatientDetailClient) CreateBulk(builders ...*InpatientDetailCreate) *InpatientDetailCreateBulk {
-	return &InpatientDetailCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of MedicalPrescription entities.
+func (c *MedicalPrescriptionClient) CreateBulk(builders ...*MedicalPrescriptionCreate) *MedicalPrescriptionCreateBulk {
+	return &MedicalPrescriptionCreateBulk{config: c.config, builders: builders}
 }
 
 // MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
 // a builder and applies setFunc on it.
-func (c *InpatientDetailClient) MapCreateBulk(slice any, setFunc func(*InpatientDetailCreate, int)) *InpatientDetailCreateBulk {
+func (c *MedicalPrescriptionClient) MapCreateBulk(slice any, setFunc func(*MedicalPrescriptionCreate, int)) *MedicalPrescriptionCreateBulk {
 	rv := reflect.ValueOf(slice)
 	if rv.Kind() != reflect.Slice {
-		return &InpatientDetailCreateBulk{err: fmt.Errorf("calling to InpatientDetailClient.MapCreateBulk with wrong type %T, need slice", slice)}
+		return &MedicalPrescriptionCreateBulk{err: fmt.Errorf("calling to MedicalPrescriptionClient.MapCreateBulk with wrong type %T, need slice", slice)}
 	}
-	builders := make([]*InpatientDetailCreate, rv.Len())
+	builders := make([]*MedicalPrescriptionCreate, rv.Len())
 	for i := 0; i < rv.Len(); i++ {
 		builders[i] = c.Create()
 		setFunc(builders[i], i)
 	}
-	return &InpatientDetailCreateBulk{config: c.config, builders: builders}
+	return &MedicalPrescriptionCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for InpatientDetail.
-func (c *InpatientDetailClient) Update() *InpatientDetailUpdate {
-	mutation := newInpatientDetailMutation(c.config, OpUpdate)
-	return &InpatientDetailUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for MedicalPrescription.
+func (c *MedicalPrescriptionClient) Update() *MedicalPrescriptionUpdate {
+	mutation := newMedicalPrescriptionMutation(c.config, OpUpdate)
+	return &MedicalPrescriptionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *InpatientDetailClient) UpdateOne(id *InpatientDetail) *InpatientDetailUpdateOne {
-	mutation := newInpatientDetailMutation(c.config, OpUpdateOne, withInpatientDetail(id))
-	return &InpatientDetailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *MedicalPrescriptionClient) UpdateOne(mp *MedicalPrescription) *MedicalPrescriptionUpdateOne {
+	mutation := newMedicalPrescriptionMutation(c.config, OpUpdateOne, withMedicalPrescription(mp))
+	return &MedicalPrescriptionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *InpatientDetailClient) UpdateOneID(id int) *InpatientDetailUpdateOne {
-	mutation := newInpatientDetailMutation(c.config, OpUpdateOne, withInpatientDetailID(id))
-	return &InpatientDetailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *MedicalPrescriptionClient) UpdateOneID(id uuid.UUID) *MedicalPrescriptionUpdateOne {
+	mutation := newMedicalPrescriptionMutation(c.config, OpUpdateOne, withMedicalPrescriptionID(id))
+	return &MedicalPrescriptionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for InpatientDetail.
-func (c *InpatientDetailClient) Delete() *InpatientDetailDelete {
-	mutation := newInpatientDetailMutation(c.config, OpDelete)
-	return &InpatientDetailDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for MedicalPrescription.
+func (c *MedicalPrescriptionClient) Delete() *MedicalPrescriptionDelete {
+	mutation := newMedicalPrescriptionMutation(c.config, OpDelete)
+	return &MedicalPrescriptionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *InpatientDetailClient) DeleteOne(id *InpatientDetail) *InpatientDetailDeleteOne {
-	return c.DeleteOneID(id.ID)
+func (c *MedicalPrescriptionClient) DeleteOne(mp *MedicalPrescription) *MedicalPrescriptionDeleteOne {
+	return c.DeleteOneID(mp.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *InpatientDetailClient) DeleteOneID(id int) *InpatientDetailDeleteOne {
-	builder := c.Delete().Where(inpatientdetail.ID(id))
+func (c *MedicalPrescriptionClient) DeleteOneID(id uuid.UUID) *MedicalPrescriptionDeleteOne {
+	builder := c.Delete().Where(medicalprescription.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &InpatientDetailDeleteOne{builder}
+	return &MedicalPrescriptionDeleteOne{builder}
 }
 
-// Query returns a query builder for InpatientDetail.
-func (c *InpatientDetailClient) Query() *InpatientDetailQuery {
-	return &InpatientDetailQuery{
+// Query returns a query builder for MedicalPrescription.
+func (c *MedicalPrescriptionClient) Query() *MedicalPrescriptionQuery {
+	return &MedicalPrescriptionQuery{
 		config: c.config,
-		ctx:    &QueryContext{Type: TypeInpatientDetail},
+		ctx:    &QueryContext{Type: TypeMedicalPrescription},
 		inters: c.Interceptors(),
 	}
 }
 
-// Get returns a InpatientDetail entity by its id.
-func (c *InpatientDetailClient) Get(ctx context.Context, id int) (*InpatientDetail, error) {
-	return c.Query().Where(inpatientdetail.ID(id)).Only(ctx)
+// Get returns a MedicalPrescription entity by its id.
+func (c *MedicalPrescriptionClient) Get(ctx context.Context, id uuid.UUID) (*MedicalPrescription, error) {
+	return c.Query().Where(medicalprescription.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *InpatientDetailClient) GetX(ctx context.Context, id int) *InpatientDetail {
+func (c *MedicalPrescriptionClient) GetX(ctx context.Context, id uuid.UUID) *MedicalPrescription {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -822,132 +562,164 @@ func (c *InpatientDetailClient) GetX(ctx context.Context, id int) *InpatientDeta
 	return obj
 }
 
+// QueryMedicalHistories queries the medical_histories edge of a MedicalPrescription.
+func (c *MedicalPrescriptionClient) QueryMedicalHistories(mp *MedicalPrescription) *MedicalHistoriesQuery {
+	query := (&MedicalHistoriesClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := mp.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(medicalprescription.Table, medicalprescription.FieldID, id),
+			sqlgraph.To(medicalhistories.Table, medicalhistories.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, medicalprescription.MedicalHistoriesTable, medicalprescription.MedicalHistoriesColumn),
+		)
+		fromV = sqlgraph.Neighbors(mp.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPrescriptionMedication queries the prescription_medication edge of a MedicalPrescription.
+func (c *MedicalPrescriptionClient) QueryPrescriptionMedication(mp *MedicalPrescription) *PrescriptionMedicationQuery {
+	query := (&PrescriptionMedicationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := mp.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(medicalprescription.Table, medicalprescription.FieldID, id),
+			sqlgraph.To(prescriptionmedication.Table, prescriptionmedication.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, medicalprescription.PrescriptionMedicationTable, medicalprescription.PrescriptionMedicationColumn),
+		)
+		fromV = sqlgraph.Neighbors(mp.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
-func (c *InpatientDetailClient) Hooks() []Hook {
-	return c.hooks.InpatientDetail
+func (c *MedicalPrescriptionClient) Hooks() []Hook {
+	return c.hooks.MedicalPrescription
 }
 
 // Interceptors returns the client interceptors.
-func (c *InpatientDetailClient) Interceptors() []Interceptor {
-	return c.inters.InpatientDetail
+func (c *MedicalPrescriptionClient) Interceptors() []Interceptor {
+	return c.inters.MedicalPrescription
 }
 
-func (c *InpatientDetailClient) mutate(ctx context.Context, m *InpatientDetailMutation) (Value, error) {
+func (c *MedicalPrescriptionClient) mutate(ctx context.Context, m *MedicalPrescriptionMutation) (Value, error) {
 	switch m.Op() {
 	case OpCreate:
-		return (&InpatientDetailCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&MedicalPrescriptionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdate:
-		return (&InpatientDetailUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&MedicalPrescriptionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdateOne:
-		return (&InpatientDetailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&MedicalPrescriptionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpDelete, OpDeleteOne:
-		return (&InpatientDetailDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+		return (&MedicalPrescriptionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
-		return nil, fmt.Errorf("ent: unknown InpatientDetail mutation op: %q", m.Op())
+		return nil, fmt.Errorf("ent: unknown MedicalPrescription mutation op: %q", m.Op())
 	}
 }
 
-// InvoiceClient is a client for the Invoice schema.
-type InvoiceClient struct {
+// MedicalSurgeryClient is a client for the MedicalSurgery schema.
+type MedicalSurgeryClient struct {
 	config
 }
 
-// NewInvoiceClient returns a client for the Invoice from the given config.
-func NewInvoiceClient(c config) *InvoiceClient {
-	return &InvoiceClient{config: c}
+// NewMedicalSurgeryClient returns a client for the MedicalSurgery from the given config.
+func NewMedicalSurgeryClient(c config) *MedicalSurgeryClient {
+	return &MedicalSurgeryClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `invoice.Hooks(f(g(h())))`.
-func (c *InvoiceClient) Use(hooks ...Hook) {
-	c.hooks.Invoice = append(c.hooks.Invoice, hooks...)
+// A call to `Use(f, g, h)` equals to `medicalsurgery.Hooks(f(g(h())))`.
+func (c *MedicalSurgeryClient) Use(hooks ...Hook) {
+	c.hooks.MedicalSurgery = append(c.hooks.MedicalSurgery, hooks...)
 }
 
 // Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `invoice.Intercept(f(g(h())))`.
-func (c *InvoiceClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Invoice = append(c.inters.Invoice, interceptors...)
+// A call to `Intercept(f, g, h)` equals to `medicalsurgery.Intercept(f(g(h())))`.
+func (c *MedicalSurgeryClient) Intercept(interceptors ...Interceptor) {
+	c.inters.MedicalSurgery = append(c.inters.MedicalSurgery, interceptors...)
 }
 
-// Create returns a builder for creating a Invoice entity.
-func (c *InvoiceClient) Create() *InvoiceCreate {
-	mutation := newInvoiceMutation(c.config, OpCreate)
-	return &InvoiceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a MedicalSurgery entity.
+func (c *MedicalSurgeryClient) Create() *MedicalSurgeryCreate {
+	mutation := newMedicalSurgeryMutation(c.config, OpCreate)
+	return &MedicalSurgeryCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of Invoice entities.
-func (c *InvoiceClient) CreateBulk(builders ...*InvoiceCreate) *InvoiceCreateBulk {
-	return &InvoiceCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of MedicalSurgery entities.
+func (c *MedicalSurgeryClient) CreateBulk(builders ...*MedicalSurgeryCreate) *MedicalSurgeryCreateBulk {
+	return &MedicalSurgeryCreateBulk{config: c.config, builders: builders}
 }
 
 // MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
 // a builder and applies setFunc on it.
-func (c *InvoiceClient) MapCreateBulk(slice any, setFunc func(*InvoiceCreate, int)) *InvoiceCreateBulk {
+func (c *MedicalSurgeryClient) MapCreateBulk(slice any, setFunc func(*MedicalSurgeryCreate, int)) *MedicalSurgeryCreateBulk {
 	rv := reflect.ValueOf(slice)
 	if rv.Kind() != reflect.Slice {
-		return &InvoiceCreateBulk{err: fmt.Errorf("calling to InvoiceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+		return &MedicalSurgeryCreateBulk{err: fmt.Errorf("calling to MedicalSurgeryClient.MapCreateBulk with wrong type %T, need slice", slice)}
 	}
-	builders := make([]*InvoiceCreate, rv.Len())
+	builders := make([]*MedicalSurgeryCreate, rv.Len())
 	for i := 0; i < rv.Len(); i++ {
 		builders[i] = c.Create()
 		setFunc(builders[i], i)
 	}
-	return &InvoiceCreateBulk{config: c.config, builders: builders}
+	return &MedicalSurgeryCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for Invoice.
-func (c *InvoiceClient) Update() *InvoiceUpdate {
-	mutation := newInvoiceMutation(c.config, OpUpdate)
-	return &InvoiceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for MedicalSurgery.
+func (c *MedicalSurgeryClient) Update() *MedicalSurgeryUpdate {
+	mutation := newMedicalSurgeryMutation(c.config, OpUpdate)
+	return &MedicalSurgeryUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *InvoiceClient) UpdateOne(i *Invoice) *InvoiceUpdateOne {
-	mutation := newInvoiceMutation(c.config, OpUpdateOne, withInvoice(i))
-	return &InvoiceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *MedicalSurgeryClient) UpdateOne(ms *MedicalSurgery) *MedicalSurgeryUpdateOne {
+	mutation := newMedicalSurgeryMutation(c.config, OpUpdateOne, withMedicalSurgery(ms))
+	return &MedicalSurgeryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *InvoiceClient) UpdateOneID(id int) *InvoiceUpdateOne {
-	mutation := newInvoiceMutation(c.config, OpUpdateOne, withInvoiceID(id))
-	return &InvoiceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *MedicalSurgeryClient) UpdateOneID(id uuid.UUID) *MedicalSurgeryUpdateOne {
+	mutation := newMedicalSurgeryMutation(c.config, OpUpdateOne, withMedicalSurgeryID(id))
+	return &MedicalSurgeryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for Invoice.
-func (c *InvoiceClient) Delete() *InvoiceDelete {
-	mutation := newInvoiceMutation(c.config, OpDelete)
-	return &InvoiceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for MedicalSurgery.
+func (c *MedicalSurgeryClient) Delete() *MedicalSurgeryDelete {
+	mutation := newMedicalSurgeryMutation(c.config, OpDelete)
+	return &MedicalSurgeryDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *InvoiceClient) DeleteOne(i *Invoice) *InvoiceDeleteOne {
-	return c.DeleteOneID(i.ID)
+func (c *MedicalSurgeryClient) DeleteOne(ms *MedicalSurgery) *MedicalSurgeryDeleteOne {
+	return c.DeleteOneID(ms.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *InvoiceClient) DeleteOneID(id int) *InvoiceDeleteOne {
-	builder := c.Delete().Where(invoice.ID(id))
+func (c *MedicalSurgeryClient) DeleteOneID(id uuid.UUID) *MedicalSurgeryDeleteOne {
+	builder := c.Delete().Where(medicalsurgery.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &InvoiceDeleteOne{builder}
+	return &MedicalSurgeryDeleteOne{builder}
 }
 
-// Query returns a query builder for Invoice.
-func (c *InvoiceClient) Query() *InvoiceQuery {
-	return &InvoiceQuery{
+// Query returns a query builder for MedicalSurgery.
+func (c *MedicalSurgeryClient) Query() *MedicalSurgeryQuery {
+	return &MedicalSurgeryQuery{
 		config: c.config,
-		ctx:    &QueryContext{Type: TypeInvoice},
+		ctx:    &QueryContext{Type: TypeMedicalSurgery},
 		inters: c.Interceptors(),
 	}
 }
 
-// Get returns a Invoice entity by its id.
-func (c *InvoiceClient) Get(ctx context.Context, id int) (*Invoice, error) {
-	return c.Query().Where(invoice.ID(id)).Only(ctx)
+// Get returns a MedicalSurgery entity by its id.
+func (c *MedicalSurgeryClient) Get(ctx context.Context, id uuid.UUID) (*MedicalSurgery, error) {
+	return c.Query().Where(medicalsurgery.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *InvoiceClient) GetX(ctx context.Context, id int) *Invoice {
+func (c *MedicalSurgeryClient) GetX(ctx context.Context, id uuid.UUID) *MedicalSurgery {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -955,28 +727,193 @@ func (c *InvoiceClient) GetX(ctx context.Context, id int) *Invoice {
 	return obj
 }
 
+// QueryMedicalHistories queries the medical_histories edge of a MedicalSurgery.
+func (c *MedicalSurgeryClient) QueryMedicalHistories(ms *MedicalSurgery) *MedicalHistoriesQuery {
+	query := (&MedicalHistoriesClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ms.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(medicalsurgery.Table, medicalsurgery.FieldID, id),
+			sqlgraph.To(medicalhistories.Table, medicalhistories.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, medicalsurgery.MedicalHistoriesTable, medicalsurgery.MedicalHistoriesColumn),
+		)
+		fromV = sqlgraph.Neighbors(ms.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
-func (c *InvoiceClient) Hooks() []Hook {
-	return c.hooks.Invoice
+func (c *MedicalSurgeryClient) Hooks() []Hook {
+	return c.hooks.MedicalSurgery
 }
 
 // Interceptors returns the client interceptors.
-func (c *InvoiceClient) Interceptors() []Interceptor {
-	return c.inters.Invoice
+func (c *MedicalSurgeryClient) Interceptors() []Interceptor {
+	return c.inters.MedicalSurgery
 }
 
-func (c *InvoiceClient) mutate(ctx context.Context, m *InvoiceMutation) (Value, error) {
+func (c *MedicalSurgeryClient) mutate(ctx context.Context, m *MedicalSurgeryMutation) (Value, error) {
 	switch m.Op() {
 	case OpCreate:
-		return (&InvoiceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&MedicalSurgeryCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdate:
-		return (&InvoiceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&MedicalSurgeryUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdateOne:
-		return (&InvoiceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&MedicalSurgeryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpDelete, OpDeleteOne:
-		return (&InvoiceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+		return (&MedicalSurgeryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
-		return nil, fmt.Errorf("ent: unknown Invoice mutation op: %q", m.Op())
+		return nil, fmt.Errorf("ent: unknown MedicalSurgery mutation op: %q", m.Op())
+	}
+}
+
+// MedicalTreatmentClient is a client for the MedicalTreatment schema.
+type MedicalTreatmentClient struct {
+	config
+}
+
+// NewMedicalTreatmentClient returns a client for the MedicalTreatment from the given config.
+func NewMedicalTreatmentClient(c config) *MedicalTreatmentClient {
+	return &MedicalTreatmentClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `medicaltreatment.Hooks(f(g(h())))`.
+func (c *MedicalTreatmentClient) Use(hooks ...Hook) {
+	c.hooks.MedicalTreatment = append(c.hooks.MedicalTreatment, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `medicaltreatment.Intercept(f(g(h())))`.
+func (c *MedicalTreatmentClient) Intercept(interceptors ...Interceptor) {
+	c.inters.MedicalTreatment = append(c.inters.MedicalTreatment, interceptors...)
+}
+
+// Create returns a builder for creating a MedicalTreatment entity.
+func (c *MedicalTreatmentClient) Create() *MedicalTreatmentCreate {
+	mutation := newMedicalTreatmentMutation(c.config, OpCreate)
+	return &MedicalTreatmentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of MedicalTreatment entities.
+func (c *MedicalTreatmentClient) CreateBulk(builders ...*MedicalTreatmentCreate) *MedicalTreatmentCreateBulk {
+	return &MedicalTreatmentCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *MedicalTreatmentClient) MapCreateBulk(slice any, setFunc func(*MedicalTreatmentCreate, int)) *MedicalTreatmentCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &MedicalTreatmentCreateBulk{err: fmt.Errorf("calling to MedicalTreatmentClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*MedicalTreatmentCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &MedicalTreatmentCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for MedicalTreatment.
+func (c *MedicalTreatmentClient) Update() *MedicalTreatmentUpdate {
+	mutation := newMedicalTreatmentMutation(c.config, OpUpdate)
+	return &MedicalTreatmentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *MedicalTreatmentClient) UpdateOne(mt *MedicalTreatment) *MedicalTreatmentUpdateOne {
+	mutation := newMedicalTreatmentMutation(c.config, OpUpdateOne, withMedicalTreatment(mt))
+	return &MedicalTreatmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *MedicalTreatmentClient) UpdateOneID(id uuid.UUID) *MedicalTreatmentUpdateOne {
+	mutation := newMedicalTreatmentMutation(c.config, OpUpdateOne, withMedicalTreatmentID(id))
+	return &MedicalTreatmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for MedicalTreatment.
+func (c *MedicalTreatmentClient) Delete() *MedicalTreatmentDelete {
+	mutation := newMedicalTreatmentMutation(c.config, OpDelete)
+	return &MedicalTreatmentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *MedicalTreatmentClient) DeleteOne(mt *MedicalTreatment) *MedicalTreatmentDeleteOne {
+	return c.DeleteOneID(mt.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *MedicalTreatmentClient) DeleteOneID(id uuid.UUID) *MedicalTreatmentDeleteOne {
+	builder := c.Delete().Where(medicaltreatment.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &MedicalTreatmentDeleteOne{builder}
+}
+
+// Query returns a query builder for MedicalTreatment.
+func (c *MedicalTreatmentClient) Query() *MedicalTreatmentQuery {
+	return &MedicalTreatmentQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeMedicalTreatment},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a MedicalTreatment entity by its id.
+func (c *MedicalTreatmentClient) Get(ctx context.Context, id uuid.UUID) (*MedicalTreatment, error) {
+	return c.Query().Where(medicaltreatment.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *MedicalTreatmentClient) GetX(ctx context.Context, id uuid.UUID) *MedicalTreatment {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryMedicalHistories queries the medical_histories edge of a MedicalTreatment.
+func (c *MedicalTreatmentClient) QueryMedicalHistories(mt *MedicalTreatment) *MedicalHistoriesQuery {
+	query := (&MedicalHistoriesClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := mt.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(medicaltreatment.Table, medicaltreatment.FieldID, id),
+			sqlgraph.To(medicalhistories.Table, medicalhistories.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, medicaltreatment.MedicalHistoriesTable, medicaltreatment.MedicalHistoriesColumn),
+		)
+		fromV = sqlgraph.Neighbors(mt.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *MedicalTreatmentClient) Hooks() []Hook {
+	return c.hooks.MedicalTreatment
+}
+
+// Interceptors returns the client interceptors.
+func (c *MedicalTreatmentClient) Interceptors() []Interceptor {
+	return c.inters.MedicalTreatment
+}
+
+func (c *MedicalTreatmentClient) mutate(ctx context.Context, m *MedicalTreatmentMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&MedicalTreatmentCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&MedicalTreatmentUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&MedicalTreatmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&MedicalTreatmentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown MedicalTreatment mutation op: %q", m.Op())
 	}
 }
 
@@ -1041,7 +978,7 @@ func (c *MedicationClient) UpdateOne(m *Medication) *MedicationUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *MedicationClient) UpdateOneID(id int) *MedicationUpdateOne {
+func (c *MedicationClient) UpdateOneID(id uuid.UUID) *MedicationUpdateOne {
 	mutation := newMedicationMutation(c.config, OpUpdateOne, withMedicationID(id))
 	return &MedicationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -1058,7 +995,7 @@ func (c *MedicationClient) DeleteOne(m *Medication) *MedicationDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *MedicationClient) DeleteOneID(id int) *MedicationDeleteOne {
+func (c *MedicationClient) DeleteOneID(id uuid.UUID) *MedicationDeleteOne {
 	builder := c.Delete().Where(medication.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -1075,17 +1012,33 @@ func (c *MedicationClient) Query() *MedicationQuery {
 }
 
 // Get returns a Medication entity by its id.
-func (c *MedicationClient) Get(ctx context.Context, id int) (*Medication, error) {
+func (c *MedicationClient) Get(ctx context.Context, id uuid.UUID) (*Medication, error) {
 	return c.Query().Where(medication.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *MedicationClient) GetX(ctx context.Context, id int) *Medication {
+func (c *MedicationClient) GetX(ctx context.Context, id uuid.UUID) *Medication {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryPrescriptionMedication queries the prescription_medication edge of a Medication.
+func (c *MedicationClient) QueryPrescriptionMedication(m *Medication) *PrescriptionMedicationQuery {
+	query := (&PrescriptionMedicationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(medication.Table, medication.FieldID, id),
+			sqlgraph.To(prescriptionmedication.Table, prescriptionmedication.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, medication.PrescriptionMedicationTable, medication.PrescriptionMedicationColumn),
+		)
+		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.
@@ -1110,421 +1063,6 @@ func (c *MedicationClient) mutate(ctx context.Context, m *MedicationMutation) (V
 		return (&MedicationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Medication mutation op: %q", m.Op())
-	}
-}
-
-// MedicationEffectClient is a client for the MedicationEffect schema.
-type MedicationEffectClient struct {
-	config
-}
-
-// NewMedicationEffectClient returns a client for the MedicationEffect from the given config.
-func NewMedicationEffectClient(c config) *MedicationEffectClient {
-	return &MedicationEffectClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `medicationeffect.Hooks(f(g(h())))`.
-func (c *MedicationEffectClient) Use(hooks ...Hook) {
-	c.hooks.MedicationEffect = append(c.hooks.MedicationEffect, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `medicationeffect.Intercept(f(g(h())))`.
-func (c *MedicationEffectClient) Intercept(interceptors ...Interceptor) {
-	c.inters.MedicationEffect = append(c.inters.MedicationEffect, interceptors...)
-}
-
-// Create returns a builder for creating a MedicationEffect entity.
-func (c *MedicationEffectClient) Create() *MedicationEffectCreate {
-	mutation := newMedicationEffectMutation(c.config, OpCreate)
-	return &MedicationEffectCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of MedicationEffect entities.
-func (c *MedicationEffectClient) CreateBulk(builders ...*MedicationEffectCreate) *MedicationEffectCreateBulk {
-	return &MedicationEffectCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *MedicationEffectClient) MapCreateBulk(slice any, setFunc func(*MedicationEffectCreate, int)) *MedicationEffectCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &MedicationEffectCreateBulk{err: fmt.Errorf("calling to MedicationEffectClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*MedicationEffectCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &MedicationEffectCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for MedicationEffect.
-func (c *MedicationEffectClient) Update() *MedicationEffectUpdate {
-	mutation := newMedicationEffectMutation(c.config, OpUpdate)
-	return &MedicationEffectUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *MedicationEffectClient) UpdateOne(me *MedicationEffect) *MedicationEffectUpdateOne {
-	mutation := newMedicationEffectMutation(c.config, OpUpdateOne, withMedicationEffect(me))
-	return &MedicationEffectUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *MedicationEffectClient) UpdateOneID(id int) *MedicationEffectUpdateOne {
-	mutation := newMedicationEffectMutation(c.config, OpUpdateOne, withMedicationEffectID(id))
-	return &MedicationEffectUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for MedicationEffect.
-func (c *MedicationEffectClient) Delete() *MedicationEffectDelete {
-	mutation := newMedicationEffectMutation(c.config, OpDelete)
-	return &MedicationEffectDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *MedicationEffectClient) DeleteOne(me *MedicationEffect) *MedicationEffectDeleteOne {
-	return c.DeleteOneID(me.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *MedicationEffectClient) DeleteOneID(id int) *MedicationEffectDeleteOne {
-	builder := c.Delete().Where(medicationeffect.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &MedicationEffectDeleteOne{builder}
-}
-
-// Query returns a query builder for MedicationEffect.
-func (c *MedicationEffectClient) Query() *MedicationEffectQuery {
-	return &MedicationEffectQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeMedicationEffect},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a MedicationEffect entity by its id.
-func (c *MedicationEffectClient) Get(ctx context.Context, id int) (*MedicationEffect, error) {
-	return c.Query().Where(medicationeffect.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *MedicationEffectClient) GetX(ctx context.Context, id int) *MedicationEffect {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *MedicationEffectClient) Hooks() []Hook {
-	return c.hooks.MedicationEffect
-}
-
-// Interceptors returns the client interceptors.
-func (c *MedicationEffectClient) Interceptors() []Interceptor {
-	return c.inters.MedicationEffect
-}
-
-func (c *MedicationEffectClient) mutate(ctx context.Context, m *MedicationEffectMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&MedicationEffectCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&MedicationEffectUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&MedicationEffectUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&MedicationEffectDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown MedicationEffect mutation op: %q", m.Op())
-	}
-}
-
-// OutpatientClient is a client for the Outpatient schema.
-type OutpatientClient struct {
-	config
-}
-
-// NewOutpatientClient returns a client for the Outpatient from the given config.
-func NewOutpatientClient(c config) *OutpatientClient {
-	return &OutpatientClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `outpatient.Hooks(f(g(h())))`.
-func (c *OutpatientClient) Use(hooks ...Hook) {
-	c.hooks.Outpatient = append(c.hooks.Outpatient, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `outpatient.Intercept(f(g(h())))`.
-func (c *OutpatientClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Outpatient = append(c.inters.Outpatient, interceptors...)
-}
-
-// Create returns a builder for creating a Outpatient entity.
-func (c *OutpatientClient) Create() *OutpatientCreate {
-	mutation := newOutpatientMutation(c.config, OpCreate)
-	return &OutpatientCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Outpatient entities.
-func (c *OutpatientClient) CreateBulk(builders ...*OutpatientCreate) *OutpatientCreateBulk {
-	return &OutpatientCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *OutpatientClient) MapCreateBulk(slice any, setFunc func(*OutpatientCreate, int)) *OutpatientCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &OutpatientCreateBulk{err: fmt.Errorf("calling to OutpatientClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*OutpatientCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &OutpatientCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Outpatient.
-func (c *OutpatientClient) Update() *OutpatientUpdate {
-	mutation := newOutpatientMutation(c.config, OpUpdate)
-	return &OutpatientUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *OutpatientClient) UpdateOne(o *Outpatient) *OutpatientUpdateOne {
-	mutation := newOutpatientMutation(c.config, OpUpdateOne, withOutpatient(o))
-	return &OutpatientUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *OutpatientClient) UpdateOneID(id uuid.UUID) *OutpatientUpdateOne {
-	mutation := newOutpatientMutation(c.config, OpUpdateOne, withOutpatientID(id))
-	return &OutpatientUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Outpatient.
-func (c *OutpatientClient) Delete() *OutpatientDelete {
-	mutation := newOutpatientMutation(c.config, OpDelete)
-	return &OutpatientDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *OutpatientClient) DeleteOne(o *Outpatient) *OutpatientDeleteOne {
-	return c.DeleteOneID(o.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *OutpatientClient) DeleteOneID(id uuid.UUID) *OutpatientDeleteOne {
-	builder := c.Delete().Where(outpatient.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &OutpatientDeleteOne{builder}
-}
-
-// Query returns a query builder for Outpatient.
-func (c *OutpatientClient) Query() *OutpatientQuery {
-	return &OutpatientQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeOutpatient},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a Outpatient entity by its id.
-func (c *OutpatientClient) Get(ctx context.Context, id uuid.UUID) (*Outpatient, error) {
-	return c.Query().Where(outpatient.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *OutpatientClient) GetX(ctx context.Context, id uuid.UUID) *Outpatient {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryPatient queries the patient edge of a Outpatient.
-func (c *OutpatientClient) QueryPatient(o *Outpatient) *PatientQuery {
-	query := (&PatientClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := o.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(outpatient.Table, outpatient.FieldID, id),
-			sqlgraph.To(patient.Table, patient.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, outpatient.PatientTable, outpatient.PatientColumn),
-		)
-		fromV = sqlgraph.Neighbors(o.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *OutpatientClient) Hooks() []Hook {
-	return c.hooks.Outpatient
-}
-
-// Interceptors returns the client interceptors.
-func (c *OutpatientClient) Interceptors() []Interceptor {
-	return c.inters.Outpatient
-}
-
-func (c *OutpatientClient) mutate(ctx context.Context, m *OutpatientMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&OutpatientCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&OutpatientUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&OutpatientUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&OutpatientDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown Outpatient mutation op: %q", m.Op())
-	}
-}
-
-// OutpatientDetailClient is a client for the OutpatientDetail schema.
-type OutpatientDetailClient struct {
-	config
-}
-
-// NewOutpatientDetailClient returns a client for the OutpatientDetail from the given config.
-func NewOutpatientDetailClient(c config) *OutpatientDetailClient {
-	return &OutpatientDetailClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `outpatientdetail.Hooks(f(g(h())))`.
-func (c *OutpatientDetailClient) Use(hooks ...Hook) {
-	c.hooks.OutpatientDetail = append(c.hooks.OutpatientDetail, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `outpatientdetail.Intercept(f(g(h())))`.
-func (c *OutpatientDetailClient) Intercept(interceptors ...Interceptor) {
-	c.inters.OutpatientDetail = append(c.inters.OutpatientDetail, interceptors...)
-}
-
-// Create returns a builder for creating a OutpatientDetail entity.
-func (c *OutpatientDetailClient) Create() *OutpatientDetailCreate {
-	mutation := newOutpatientDetailMutation(c.config, OpCreate)
-	return &OutpatientDetailCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of OutpatientDetail entities.
-func (c *OutpatientDetailClient) CreateBulk(builders ...*OutpatientDetailCreate) *OutpatientDetailCreateBulk {
-	return &OutpatientDetailCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *OutpatientDetailClient) MapCreateBulk(slice any, setFunc func(*OutpatientDetailCreate, int)) *OutpatientDetailCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &OutpatientDetailCreateBulk{err: fmt.Errorf("calling to OutpatientDetailClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*OutpatientDetailCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &OutpatientDetailCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for OutpatientDetail.
-func (c *OutpatientDetailClient) Update() *OutpatientDetailUpdate {
-	mutation := newOutpatientDetailMutation(c.config, OpUpdate)
-	return &OutpatientDetailUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *OutpatientDetailClient) UpdateOne(od *OutpatientDetail) *OutpatientDetailUpdateOne {
-	mutation := newOutpatientDetailMutation(c.config, OpUpdateOne, withOutpatientDetail(od))
-	return &OutpatientDetailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *OutpatientDetailClient) UpdateOneID(id int) *OutpatientDetailUpdateOne {
-	mutation := newOutpatientDetailMutation(c.config, OpUpdateOne, withOutpatientDetailID(id))
-	return &OutpatientDetailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for OutpatientDetail.
-func (c *OutpatientDetailClient) Delete() *OutpatientDetailDelete {
-	mutation := newOutpatientDetailMutation(c.config, OpDelete)
-	return &OutpatientDetailDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *OutpatientDetailClient) DeleteOne(od *OutpatientDetail) *OutpatientDetailDeleteOne {
-	return c.DeleteOneID(od.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *OutpatientDetailClient) DeleteOneID(id int) *OutpatientDetailDeleteOne {
-	builder := c.Delete().Where(outpatientdetail.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &OutpatientDetailDeleteOne{builder}
-}
-
-// Query returns a query builder for OutpatientDetail.
-func (c *OutpatientDetailClient) Query() *OutpatientDetailQuery {
-	return &OutpatientDetailQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeOutpatientDetail},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a OutpatientDetail entity by its id.
-func (c *OutpatientDetailClient) Get(ctx context.Context, id int) (*OutpatientDetail, error) {
-	return c.Query().Where(outpatientdetail.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *OutpatientDetailClient) GetX(ctx context.Context, id int) *OutpatientDetail {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *OutpatientDetailClient) Hooks() []Hook {
-	return c.hooks.OutpatientDetail
-}
-
-// Interceptors returns the client interceptors.
-func (c *OutpatientDetailClient) Interceptors() []Interceptor {
-	return c.inters.OutpatientDetail
-}
-
-func (c *OutpatientDetailClient) mutate(ctx context.Context, m *OutpatientDetailMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&OutpatientDetailCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&OutpatientDetailUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&OutpatientDetailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&OutpatientDetailDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown OutpatientDetail mutation op: %q", m.Op())
 	}
 }
 
@@ -1636,31 +1174,15 @@ func (c *PatientClient) GetX(ctx context.Context, id uuid.UUID) *Patient {
 	return obj
 }
 
-// QueryInpatients queries the inpatients edge of a Patient.
-func (c *PatientClient) QueryInpatients(pa *Patient) *InpatientQuery {
-	query := (&InpatientClient{config: c.config}).Query()
+// QueryMedicalHistory queries the medical_history edge of a Patient.
+func (c *PatientClient) QueryMedicalHistory(pa *Patient) *MedicalHistoriesQuery {
+	query := (&MedicalHistoriesClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := pa.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(patient.Table, patient.FieldID, id),
-			sqlgraph.To(inpatient.Table, inpatient.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, patient.InpatientsTable, patient.InpatientsColumn),
-		)
-		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryOutpatients queries the outpatients edge of a Patient.
-func (c *PatientClient) QueryOutpatients(pa *Patient) *OutpatientQuery {
-	query := (&OutpatientClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := pa.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(patient.Table, patient.FieldID, id),
-			sqlgraph.To(outpatient.Table, outpatient.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, patient.OutpatientsTable, patient.OutpatientsColumn),
+			sqlgraph.To(medicalhistories.Table, medicalhistories.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, patient.MedicalHistoryTable, patient.MedicalHistoryColumn),
 		)
 		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
 		return fromV, nil
@@ -1693,107 +1215,107 @@ func (c *PatientClient) mutate(ctx context.Context, m *PatientMutation) (Value, 
 	}
 }
 
-// TreatDetailClient is a client for the TreatDetail schema.
-type TreatDetailClient struct {
+// PrescriptionMedicationClient is a client for the PrescriptionMedication schema.
+type PrescriptionMedicationClient struct {
 	config
 }
 
-// NewTreatDetailClient returns a client for the TreatDetail from the given config.
-func NewTreatDetailClient(c config) *TreatDetailClient {
-	return &TreatDetailClient{config: c}
+// NewPrescriptionMedicationClient returns a client for the PrescriptionMedication from the given config.
+func NewPrescriptionMedicationClient(c config) *PrescriptionMedicationClient {
+	return &PrescriptionMedicationClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `treatdetail.Hooks(f(g(h())))`.
-func (c *TreatDetailClient) Use(hooks ...Hook) {
-	c.hooks.TreatDetail = append(c.hooks.TreatDetail, hooks...)
+// A call to `Use(f, g, h)` equals to `prescriptionmedication.Hooks(f(g(h())))`.
+func (c *PrescriptionMedicationClient) Use(hooks ...Hook) {
+	c.hooks.PrescriptionMedication = append(c.hooks.PrescriptionMedication, hooks...)
 }
 
 // Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `treatdetail.Intercept(f(g(h())))`.
-func (c *TreatDetailClient) Intercept(interceptors ...Interceptor) {
-	c.inters.TreatDetail = append(c.inters.TreatDetail, interceptors...)
+// A call to `Intercept(f, g, h)` equals to `prescriptionmedication.Intercept(f(g(h())))`.
+func (c *PrescriptionMedicationClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PrescriptionMedication = append(c.inters.PrescriptionMedication, interceptors...)
 }
 
-// Create returns a builder for creating a TreatDetail entity.
-func (c *TreatDetailClient) Create() *TreatDetailCreate {
-	mutation := newTreatDetailMutation(c.config, OpCreate)
-	return &TreatDetailCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a PrescriptionMedication entity.
+func (c *PrescriptionMedicationClient) Create() *PrescriptionMedicationCreate {
+	mutation := newPrescriptionMedicationMutation(c.config, OpCreate)
+	return &PrescriptionMedicationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of TreatDetail entities.
-func (c *TreatDetailClient) CreateBulk(builders ...*TreatDetailCreate) *TreatDetailCreateBulk {
-	return &TreatDetailCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of PrescriptionMedication entities.
+func (c *PrescriptionMedicationClient) CreateBulk(builders ...*PrescriptionMedicationCreate) *PrescriptionMedicationCreateBulk {
+	return &PrescriptionMedicationCreateBulk{config: c.config, builders: builders}
 }
 
 // MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
 // a builder and applies setFunc on it.
-func (c *TreatDetailClient) MapCreateBulk(slice any, setFunc func(*TreatDetailCreate, int)) *TreatDetailCreateBulk {
+func (c *PrescriptionMedicationClient) MapCreateBulk(slice any, setFunc func(*PrescriptionMedicationCreate, int)) *PrescriptionMedicationCreateBulk {
 	rv := reflect.ValueOf(slice)
 	if rv.Kind() != reflect.Slice {
-		return &TreatDetailCreateBulk{err: fmt.Errorf("calling to TreatDetailClient.MapCreateBulk with wrong type %T, need slice", slice)}
+		return &PrescriptionMedicationCreateBulk{err: fmt.Errorf("calling to PrescriptionMedicationClient.MapCreateBulk with wrong type %T, need slice", slice)}
 	}
-	builders := make([]*TreatDetailCreate, rv.Len())
+	builders := make([]*PrescriptionMedicationCreate, rv.Len())
 	for i := 0; i < rv.Len(); i++ {
 		builders[i] = c.Create()
 		setFunc(builders[i], i)
 	}
-	return &TreatDetailCreateBulk{config: c.config, builders: builders}
+	return &PrescriptionMedicationCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for TreatDetail.
-func (c *TreatDetailClient) Update() *TreatDetailUpdate {
-	mutation := newTreatDetailMutation(c.config, OpUpdate)
-	return &TreatDetailUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for PrescriptionMedication.
+func (c *PrescriptionMedicationClient) Update() *PrescriptionMedicationUpdate {
+	mutation := newPrescriptionMedicationMutation(c.config, OpUpdate)
+	return &PrescriptionMedicationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *TreatDetailClient) UpdateOne(td *TreatDetail) *TreatDetailUpdateOne {
-	mutation := newTreatDetailMutation(c.config, OpUpdateOne, withTreatDetail(td))
-	return &TreatDetailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *PrescriptionMedicationClient) UpdateOne(pm *PrescriptionMedication) *PrescriptionMedicationUpdateOne {
+	mutation := newPrescriptionMedicationMutation(c.config, OpUpdateOne, withPrescriptionMedication(pm))
+	return &PrescriptionMedicationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *TreatDetailClient) UpdateOneID(id int) *TreatDetailUpdateOne {
-	mutation := newTreatDetailMutation(c.config, OpUpdateOne, withTreatDetailID(id))
-	return &TreatDetailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *PrescriptionMedicationClient) UpdateOneID(id uuid.UUID) *PrescriptionMedicationUpdateOne {
+	mutation := newPrescriptionMedicationMutation(c.config, OpUpdateOne, withPrescriptionMedicationID(id))
+	return &PrescriptionMedicationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for TreatDetail.
-func (c *TreatDetailClient) Delete() *TreatDetailDelete {
-	mutation := newTreatDetailMutation(c.config, OpDelete)
-	return &TreatDetailDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for PrescriptionMedication.
+func (c *PrescriptionMedicationClient) Delete() *PrescriptionMedicationDelete {
+	mutation := newPrescriptionMedicationMutation(c.config, OpDelete)
+	return &PrescriptionMedicationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *TreatDetailClient) DeleteOne(td *TreatDetail) *TreatDetailDeleteOne {
-	return c.DeleteOneID(td.ID)
+func (c *PrescriptionMedicationClient) DeleteOne(pm *PrescriptionMedication) *PrescriptionMedicationDeleteOne {
+	return c.DeleteOneID(pm.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *TreatDetailClient) DeleteOneID(id int) *TreatDetailDeleteOne {
-	builder := c.Delete().Where(treatdetail.ID(id))
+func (c *PrescriptionMedicationClient) DeleteOneID(id uuid.UUID) *PrescriptionMedicationDeleteOne {
+	builder := c.Delete().Where(prescriptionmedication.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &TreatDetailDeleteOne{builder}
+	return &PrescriptionMedicationDeleteOne{builder}
 }
 
-// Query returns a query builder for TreatDetail.
-func (c *TreatDetailClient) Query() *TreatDetailQuery {
-	return &TreatDetailQuery{
+// Query returns a query builder for PrescriptionMedication.
+func (c *PrescriptionMedicationClient) Query() *PrescriptionMedicationQuery {
+	return &PrescriptionMedicationQuery{
 		config: c.config,
-		ctx:    &QueryContext{Type: TypeTreatDetail},
+		ctx:    &QueryContext{Type: TypePrescriptionMedication},
 		inters: c.Interceptors(),
 	}
 }
 
-// Get returns a TreatDetail entity by its id.
-func (c *TreatDetailClient) Get(ctx context.Context, id int) (*TreatDetail, error) {
-	return c.Query().Where(treatdetail.ID(id)).Only(ctx)
+// Get returns a PrescriptionMedication entity by its id.
+func (c *PrescriptionMedicationClient) Get(ctx context.Context, id uuid.UUID) (*PrescriptionMedication, error) {
+	return c.Query().Where(prescriptionmedication.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *TreatDetailClient) GetX(ctx context.Context, id int) *TreatDetail {
+func (c *PrescriptionMedicationClient) GetX(ctx context.Context, id uuid.UUID) *PrescriptionMedication {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -1801,174 +1323,71 @@ func (c *TreatDetailClient) GetX(ctx context.Context, id int) *TreatDetail {
 	return obj
 }
 
-// Hooks returns the client hooks.
-func (c *TreatDetailClient) Hooks() []Hook {
-	return c.hooks.TreatDetail
-}
-
-// Interceptors returns the client interceptors.
-func (c *TreatDetailClient) Interceptors() []Interceptor {
-	return c.inters.TreatDetail
-}
-
-func (c *TreatDetailClient) mutate(ctx context.Context, m *TreatDetailMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&TreatDetailCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&TreatDetailUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&TreatDetailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&TreatDetailDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown TreatDetail mutation op: %q", m.Op())
+// QueryMedicalPrescription queries the medical_prescription edge of a PrescriptionMedication.
+func (c *PrescriptionMedicationClient) QueryMedicalPrescription(pm *PrescriptionMedication) *MedicalPrescriptionQuery {
+	query := (&MedicalPrescriptionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pm.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(prescriptionmedication.Table, prescriptionmedication.FieldID, id),
+			sqlgraph.To(medicalprescription.Table, medicalprescription.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, prescriptionmedication.MedicalPrescriptionTable, prescriptionmedication.MedicalPrescriptionColumn),
+		)
+		fromV = sqlgraph.Neighbors(pm.driver.Dialect(), step)
+		return fromV, nil
 	}
+	return query
 }
 
-// TreatMedicationClient is a client for the TreatMedication schema.
-type TreatMedicationClient struct {
-	config
-}
-
-// NewTreatMedicationClient returns a client for the TreatMedication from the given config.
-func NewTreatMedicationClient(c config) *TreatMedicationClient {
-	return &TreatMedicationClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `treatmedication.Hooks(f(g(h())))`.
-func (c *TreatMedicationClient) Use(hooks ...Hook) {
-	c.hooks.TreatMedication = append(c.hooks.TreatMedication, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `treatmedication.Intercept(f(g(h())))`.
-func (c *TreatMedicationClient) Intercept(interceptors ...Interceptor) {
-	c.inters.TreatMedication = append(c.inters.TreatMedication, interceptors...)
-}
-
-// Create returns a builder for creating a TreatMedication entity.
-func (c *TreatMedicationClient) Create() *TreatMedicationCreate {
-	mutation := newTreatMedicationMutation(c.config, OpCreate)
-	return &TreatMedicationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of TreatMedication entities.
-func (c *TreatMedicationClient) CreateBulk(builders ...*TreatMedicationCreate) *TreatMedicationCreateBulk {
-	return &TreatMedicationCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *TreatMedicationClient) MapCreateBulk(slice any, setFunc func(*TreatMedicationCreate, int)) *TreatMedicationCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &TreatMedicationCreateBulk{err: fmt.Errorf("calling to TreatMedicationClient.MapCreateBulk with wrong type %T, need slice", slice)}
+// QueryMedication queries the medication edge of a PrescriptionMedication.
+func (c *PrescriptionMedicationClient) QueryMedication(pm *PrescriptionMedication) *MedicationQuery {
+	query := (&MedicationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pm.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(prescriptionmedication.Table, prescriptionmedication.FieldID, id),
+			sqlgraph.To(medication.Table, medication.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, prescriptionmedication.MedicationTable, prescriptionmedication.MedicationColumn),
+		)
+		fromV = sqlgraph.Neighbors(pm.driver.Dialect(), step)
+		return fromV, nil
 	}
-	builders := make([]*TreatMedicationCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &TreatMedicationCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for TreatMedication.
-func (c *TreatMedicationClient) Update() *TreatMedicationUpdate {
-	mutation := newTreatMedicationMutation(c.config, OpUpdate)
-	return &TreatMedicationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *TreatMedicationClient) UpdateOne(tm *TreatMedication) *TreatMedicationUpdateOne {
-	mutation := newTreatMedicationMutation(c.config, OpUpdateOne, withTreatMedication(tm))
-	return &TreatMedicationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *TreatMedicationClient) UpdateOneID(id int) *TreatMedicationUpdateOne {
-	mutation := newTreatMedicationMutation(c.config, OpUpdateOne, withTreatMedicationID(id))
-	return &TreatMedicationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for TreatMedication.
-func (c *TreatMedicationClient) Delete() *TreatMedicationDelete {
-	mutation := newTreatMedicationMutation(c.config, OpDelete)
-	return &TreatMedicationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *TreatMedicationClient) DeleteOne(tm *TreatMedication) *TreatMedicationDeleteOne {
-	return c.DeleteOneID(tm.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *TreatMedicationClient) DeleteOneID(id int) *TreatMedicationDeleteOne {
-	builder := c.Delete().Where(treatmedication.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &TreatMedicationDeleteOne{builder}
-}
-
-// Query returns a query builder for TreatMedication.
-func (c *TreatMedicationClient) Query() *TreatMedicationQuery {
-	return &TreatMedicationQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeTreatMedication},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a TreatMedication entity by its id.
-func (c *TreatMedicationClient) Get(ctx context.Context, id int) (*TreatMedication, error) {
-	return c.Query().Where(treatmedication.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *TreatMedicationClient) GetX(ctx context.Context, id int) *TreatMedication {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
+	return query
 }
 
 // Hooks returns the client hooks.
-func (c *TreatMedicationClient) Hooks() []Hook {
-	return c.hooks.TreatMedication
+func (c *PrescriptionMedicationClient) Hooks() []Hook {
+	return c.hooks.PrescriptionMedication
 }
 
 // Interceptors returns the client interceptors.
-func (c *TreatMedicationClient) Interceptors() []Interceptor {
-	return c.inters.TreatMedication
+func (c *PrescriptionMedicationClient) Interceptors() []Interceptor {
+	return c.inters.PrescriptionMedication
 }
 
-func (c *TreatMedicationClient) mutate(ctx context.Context, m *TreatMedicationMutation) (Value, error) {
+func (c *PrescriptionMedicationClient) mutate(ctx context.Context, m *PrescriptionMedicationMutation) (Value, error) {
 	switch m.Op() {
 	case OpCreate:
-		return (&TreatMedicationCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&PrescriptionMedicationCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdate:
-		return (&TreatMedicationUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&PrescriptionMedicationUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdateOne:
-		return (&TreatMedicationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&PrescriptionMedicationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpDelete, OpDeleteOne:
-		return (&TreatMedicationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+		return (&PrescriptionMedicationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
-		return nil, fmt.Errorf("ent: unknown TreatMedication mutation op: %q", m.Op())
+		return nil, fmt.Errorf("ent: unknown PrescriptionMedication mutation op: %q", m.Op())
 	}
 }
 
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		ExamineDetail, ExamineMedication, Inpatient, InpatientDetail, Invoice,
-		Medication, MedicationEffect, Outpatient, OutpatientDetail, Patient,
-		TreatDetail, TreatMedication []ent.Hook
+		MedicalHistories, MedicalPrescription, MedicalSurgery, MedicalTreatment,
+		Medication, Patient, PrescriptionMedication []ent.Hook
 	}
 	inters struct {
-		ExamineDetail, ExamineMedication, Inpatient, InpatientDetail, Invoice,
-		Medication, MedicationEffect, Outpatient, OutpatientDetail, Patient,
-		TreatDetail, TreatMedication []ent.Interceptor
+		MedicalHistories, MedicalPrescription, MedicalSurgery, MedicalTreatment,
+		Medication, Patient, PrescriptionMedication []ent.Interceptor
 	}
 )

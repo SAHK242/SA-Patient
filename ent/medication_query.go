@@ -4,24 +4,28 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 	"patient/ent/medication"
 	"patient/ent/predicate"
+	"patient/ent/prescriptionmedication"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // MedicationQuery is the builder for querying Medication entities.
 type MedicationQuery struct {
 	config
-	ctx        *QueryContext
-	order      []medication.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Medication
+	ctx                        *QueryContext
+	order                      []medication.OrderOption
+	inters                     []Interceptor
+	predicates                 []predicate.Medication
+	withPrescriptionMedication *PrescriptionMedicationQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -58,6 +62,28 @@ func (mq *MedicationQuery) Order(o ...medication.OrderOption) *MedicationQuery {
 	return mq
 }
 
+// QueryPrescriptionMedication chains the current query on the "prescription_medication" edge.
+func (mq *MedicationQuery) QueryPrescriptionMedication() *PrescriptionMedicationQuery {
+	query := (&PrescriptionMedicationClient{config: mq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := mq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := mq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(medication.Table, medication.FieldID, selector),
+			sqlgraph.To(prescriptionmedication.Table, prescriptionmedication.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, medication.PrescriptionMedicationTable, medication.PrescriptionMedicationColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(mq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Medication entity from the query.
 // Returns a *NotFoundError when no Medication was found.
 func (mq *MedicationQuery) First(ctx context.Context) (*Medication, error) {
@@ -82,8 +108,8 @@ func (mq *MedicationQuery) FirstX(ctx context.Context) *Medication {
 
 // FirstID returns the first Medication ID from the query.
 // Returns a *NotFoundError when no Medication ID was found.
-func (mq *MedicationQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (mq *MedicationQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = mq.Limit(1).IDs(setContextOp(ctx, mq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
@@ -95,7 +121,7 @@ func (mq *MedicationQuery) FirstID(ctx context.Context) (id int, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (mq *MedicationQuery) FirstIDX(ctx context.Context) int {
+func (mq *MedicationQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := mq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -133,8 +159,8 @@ func (mq *MedicationQuery) OnlyX(ctx context.Context) *Medication {
 // OnlyID is like Only, but returns the only Medication ID in the query.
 // Returns a *NotSingularError when more than one Medication ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (mq *MedicationQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
+func (mq *MedicationQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+	var ids []uuid.UUID
 	if ids, err = mq.Limit(2).IDs(setContextOp(ctx, mq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
@@ -150,7 +176,7 @@ func (mq *MedicationQuery) OnlyID(ctx context.Context) (id int, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (mq *MedicationQuery) OnlyIDX(ctx context.Context) int {
+func (mq *MedicationQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := mq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -178,7 +204,7 @@ func (mq *MedicationQuery) AllX(ctx context.Context) []*Medication {
 }
 
 // IDs executes the query and returns a list of Medication IDs.
-func (mq *MedicationQuery) IDs(ctx context.Context) (ids []int, err error) {
+func (mq *MedicationQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if mq.ctx.Unique == nil && mq.path != nil {
 		mq.Unique(true)
 	}
@@ -190,7 +216,7 @@ func (mq *MedicationQuery) IDs(ctx context.Context) (ids []int, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (mq *MedicationQuery) IDsX(ctx context.Context) []int {
+func (mq *MedicationQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := mq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -245,19 +271,43 @@ func (mq *MedicationQuery) Clone() *MedicationQuery {
 		return nil
 	}
 	return &MedicationQuery{
-		config:     mq.config,
-		ctx:        mq.ctx.Clone(),
-		order:      append([]medication.OrderOption{}, mq.order...),
-		inters:     append([]Interceptor{}, mq.inters...),
-		predicates: append([]predicate.Medication{}, mq.predicates...),
+		config:                     mq.config,
+		ctx:                        mq.ctx.Clone(),
+		order:                      append([]medication.OrderOption{}, mq.order...),
+		inters:                     append([]Interceptor{}, mq.inters...),
+		predicates:                 append([]predicate.Medication{}, mq.predicates...),
+		withPrescriptionMedication: mq.withPrescriptionMedication.Clone(),
 		// clone intermediate query.
 		sql:  mq.sql.Clone(),
 		path: mq.path,
 	}
 }
 
+// WithPrescriptionMedication tells the query-builder to eager-load the nodes that are connected to
+// the "prescription_medication" edge. The optional arguments are used to configure the query builder of the edge.
+func (mq *MedicationQuery) WithPrescriptionMedication(opts ...func(*PrescriptionMedicationQuery)) *MedicationQuery {
+	query := (&PrescriptionMedicationClient{config: mq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	mq.withPrescriptionMedication = query
+	return mq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
+//
+// Example:
+//
+//	var v []struct {
+//		Name string `json:"name,omitempty"`
+//		Count int `json:"count,omitempty"`
+//	}
+//
+//	client.Medication.Query().
+//		GroupBy(medication.FieldName).
+//		Aggregate(ent.Count()).
+//		Scan(ctx, &v)
 func (mq *MedicationQuery) GroupBy(field string, fields ...string) *MedicationGroupBy {
 	mq.ctx.Fields = append([]string{field}, fields...)
 	grbuild := &MedicationGroupBy{build: mq}
@@ -269,6 +319,16 @@ func (mq *MedicationQuery) GroupBy(field string, fields ...string) *MedicationGr
 
 // Select allows the selection one or more fields/columns for the given query,
 // instead of selecting all fields in the entity.
+//
+// Example:
+//
+//	var v []struct {
+//		Name string `json:"name,omitempty"`
+//	}
+//
+//	client.Medication.Query().
+//		Select(medication.FieldName).
+//		Scan(ctx, &v)
 func (mq *MedicationQuery) Select(fields ...string) *MedicationSelect {
 	mq.ctx.Fields = append(mq.ctx.Fields, fields...)
 	sbuild := &MedicationSelect{MedicationQuery: mq}
@@ -310,8 +370,11 @@ func (mq *MedicationQuery) prepareQuery(ctx context.Context) error {
 
 func (mq *MedicationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Medication, error) {
 	var (
-		nodes = []*Medication{}
-		_spec = mq.querySpec()
+		nodes       = []*Medication{}
+		_spec       = mq.querySpec()
+		loadedTypes = [1]bool{
+			mq.withPrescriptionMedication != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Medication).scanValues(nil, columns)
@@ -319,6 +382,7 @@ func (mq *MedicationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*M
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Medication{config: mq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	for i := range hooks {
@@ -330,7 +394,47 @@ func (mq *MedicationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*M
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := mq.withPrescriptionMedication; query != nil {
+		if err := mq.loadPrescriptionMedication(ctx, query, nodes,
+			func(n *Medication) { n.Edges.PrescriptionMedication = []*PrescriptionMedication{} },
+			func(n *Medication, e *PrescriptionMedication) {
+				n.Edges.PrescriptionMedication = append(n.Edges.PrescriptionMedication, e)
+			}); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
+}
+
+func (mq *MedicationQuery) loadPrescriptionMedication(ctx context.Context, query *PrescriptionMedicationQuery, nodes []*Medication, init func(*Medication), assign func(*Medication, *PrescriptionMedication)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Medication)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(prescriptionmedication.FieldMedicationID)
+	}
+	query.Where(predicate.PrescriptionMedication(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(medication.PrescriptionMedicationColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.MedicationID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "medication_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
 }
 
 func (mq *MedicationQuery) sqlCount(ctx context.Context) (int, error) {
@@ -343,7 +447,7 @@ func (mq *MedicationQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (mq *MedicationQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(medication.Table, medication.Columns, sqlgraph.NewFieldSpec(medication.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewQuerySpec(medication.Table, medication.Columns, sqlgraph.NewFieldSpec(medication.FieldID, field.TypeUUID))
 	_spec.From = mq.sql
 	if unique := mq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique

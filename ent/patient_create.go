@@ -6,8 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"patient/ent/inpatient"
-	"patient/ent/outpatient"
+	"patient/ent/medicalhistories"
 	"patient/ent/patient"
 	"time"
 
@@ -26,9 +25,9 @@ type PatientCreate struct {
 	conflict []sql.ConflictOption
 }
 
-// SetPhoneNumber sets the "phone_number" field.
-func (pc *PatientCreate) SetPhoneNumber(s string) *PatientCreate {
-	pc.mutation.SetPhoneNumber(s)
+// SetPhone sets the "phone" field.
+func (pc *PatientCreate) SetPhone(s string) *PatientCreate {
+	pc.mutation.SetPhone(s)
 	return pc
 }
 
@@ -62,17 +61,43 @@ func (pc *PatientCreate) SetDateOfBirth(t time.Time) *PatientCreate {
 	return pc
 }
 
-// SetCurrentPatientType sets the "current_patient_type" field.
-func (pc *PatientCreate) SetCurrentPatientType(i int32) *PatientCreate {
-	pc.mutation.SetCurrentPatientType(i)
+// SetCreatedAt sets the "created_at" field.
+func (pc *PatientCreate) SetCreatedAt(t time.Time) *PatientCreate {
+	pc.mutation.SetCreatedAt(t)
 	return pc
 }
 
-// SetNillableCurrentPatientType sets the "current_patient_type" field if the given value is not nil.
-func (pc *PatientCreate) SetNillableCurrentPatientType(i *int32) *PatientCreate {
-	if i != nil {
-		pc.SetCurrentPatientType(*i)
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (pc *PatientCreate) SetNillableCreatedAt(t *time.Time) *PatientCreate {
+	if t != nil {
+		pc.SetCreatedAt(*t)
 	}
+	return pc
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (pc *PatientCreate) SetUpdatedAt(t time.Time) *PatientCreate {
+	pc.mutation.SetUpdatedAt(t)
+	return pc
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (pc *PatientCreate) SetNillableUpdatedAt(t *time.Time) *PatientCreate {
+	if t != nil {
+		pc.SetUpdatedAt(*t)
+	}
+	return pc
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (pc *PatientCreate) SetCreatedBy(u uuid.UUID) *PatientCreate {
+	pc.mutation.SetCreatedBy(u)
+	return pc
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (pc *PatientCreate) SetUpdatedBy(u uuid.UUID) *PatientCreate {
+	pc.mutation.SetUpdatedBy(u)
 	return pc
 }
 
@@ -90,34 +115,19 @@ func (pc *PatientCreate) SetNillableID(u *uuid.UUID) *PatientCreate {
 	return pc
 }
 
-// AddInpatientIDs adds the "inpatients" edge to the Inpatient entity by IDs.
-func (pc *PatientCreate) AddInpatientIDs(ids ...uuid.UUID) *PatientCreate {
-	pc.mutation.AddInpatientIDs(ids...)
+// AddMedicalHistoryIDs adds the "medical_history" edge to the MedicalHistories entity by IDs.
+func (pc *PatientCreate) AddMedicalHistoryIDs(ids ...uuid.UUID) *PatientCreate {
+	pc.mutation.AddMedicalHistoryIDs(ids...)
 	return pc
 }
 
-// AddInpatients adds the "inpatients" edges to the Inpatient entity.
-func (pc *PatientCreate) AddInpatients(i ...*Inpatient) *PatientCreate {
-	ids := make([]uuid.UUID, len(i))
-	for j := range i {
-		ids[j] = i[j].ID
+// AddMedicalHistory adds the "medical_history" edges to the MedicalHistories entity.
+func (pc *PatientCreate) AddMedicalHistory(m ...*MedicalHistories) *PatientCreate {
+	ids := make([]uuid.UUID, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
 	}
-	return pc.AddInpatientIDs(ids...)
-}
-
-// AddOutpatientIDs adds the "outpatients" edge to the Outpatient entity by IDs.
-func (pc *PatientCreate) AddOutpatientIDs(ids ...uuid.UUID) *PatientCreate {
-	pc.mutation.AddOutpatientIDs(ids...)
-	return pc
-}
-
-// AddOutpatients adds the "outpatients" edges to the Outpatient entity.
-func (pc *PatientCreate) AddOutpatients(o ...*Outpatient) *PatientCreate {
-	ids := make([]uuid.UUID, len(o))
-	for i := range o {
-		ids[i] = o[i].ID
-	}
-	return pc.AddOutpatientIDs(ids...)
+	return pc.AddMedicalHistoryIDs(ids...)
 }
 
 // Mutation returns the PatientMutation object of the builder.
@@ -155,9 +165,13 @@ func (pc *PatientCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (pc *PatientCreate) defaults() {
-	if _, ok := pc.mutation.CurrentPatientType(); !ok {
-		v := patient.DefaultCurrentPatientType
-		pc.mutation.SetCurrentPatientType(v)
+	if _, ok := pc.mutation.CreatedAt(); !ok {
+		v := patient.DefaultCreatedAt()
+		pc.mutation.SetCreatedAt(v)
+	}
+	if _, ok := pc.mutation.UpdatedAt(); !ok {
+		v := patient.DefaultUpdatedAt()
+		pc.mutation.SetUpdatedAt(v)
 	}
 	if _, ok := pc.mutation.ID(); !ok {
 		v := patient.DefaultID()
@@ -167,8 +181,8 @@ func (pc *PatientCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (pc *PatientCreate) check() error {
-	if _, ok := pc.mutation.PhoneNumber(); !ok {
-		return &ValidationError{Name: "phone_number", err: errors.New(`ent: missing required field "Patient.phone_number"`)}
+	if _, ok := pc.mutation.Phone(); !ok {
+		return &ValidationError{Name: "phone", err: errors.New(`ent: missing required field "Patient.phone"`)}
 	}
 	if _, ok := pc.mutation.FirstName(); !ok {
 		return &ValidationError{Name: "first_name", err: errors.New(`ent: missing required field "Patient.first_name"`)}
@@ -190,8 +204,17 @@ func (pc *PatientCreate) check() error {
 	if _, ok := pc.mutation.DateOfBirth(); !ok {
 		return &ValidationError{Name: "date_of_birth", err: errors.New(`ent: missing required field "Patient.date_of_birth"`)}
 	}
-	if _, ok := pc.mutation.CurrentPatientType(); !ok {
-		return &ValidationError{Name: "current_patient_type", err: errors.New(`ent: missing required field "Patient.current_patient_type"`)}
+	if _, ok := pc.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Patient.created_at"`)}
+	}
+	if _, ok := pc.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Patient.updated_at"`)}
+	}
+	if _, ok := pc.mutation.CreatedBy(); !ok {
+		return &ValidationError{Name: "created_by", err: errors.New(`ent: missing required field "Patient.created_by"`)}
+	}
+	if _, ok := pc.mutation.UpdatedBy(); !ok {
+		return &ValidationError{Name: "updated_by", err: errors.New(`ent: missing required field "Patient.updated_by"`)}
 	}
 	return nil
 }
@@ -229,9 +252,9 @@ func (pc *PatientCreate) createSpec() (*Patient, *sqlgraph.CreateSpec) {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := pc.mutation.PhoneNumber(); ok {
-		_spec.SetField(patient.FieldPhoneNumber, field.TypeString, value)
-		_node.PhoneNumber = value
+	if value, ok := pc.mutation.Phone(); ok {
+		_spec.SetField(patient.FieldPhone, field.TypeString, value)
+		_node.Phone = value
 	}
 	if value, ok := pc.mutation.FirstName(); ok {
 		_spec.SetField(patient.FieldFirstName, field.TypeString, value)
@@ -253,35 +276,31 @@ func (pc *PatientCreate) createSpec() (*Patient, *sqlgraph.CreateSpec) {
 		_spec.SetField(patient.FieldDateOfBirth, field.TypeTime, value)
 		_node.DateOfBirth = value
 	}
-	if value, ok := pc.mutation.CurrentPatientType(); ok {
-		_spec.SetField(patient.FieldCurrentPatientType, field.TypeInt32, value)
-		_node.CurrentPatientType = value
+	if value, ok := pc.mutation.CreatedAt(); ok {
+		_spec.SetField(patient.FieldCreatedAt, field.TypeTime, value)
+		_node.CreatedAt = value
 	}
-	if nodes := pc.mutation.InpatientsIDs(); len(nodes) > 0 {
+	if value, ok := pc.mutation.UpdatedAt(); ok {
+		_spec.SetField(patient.FieldUpdatedAt, field.TypeTime, value)
+		_node.UpdatedAt = value
+	}
+	if value, ok := pc.mutation.CreatedBy(); ok {
+		_spec.SetField(patient.FieldCreatedBy, field.TypeUUID, value)
+		_node.CreatedBy = value
+	}
+	if value, ok := pc.mutation.UpdatedBy(); ok {
+		_spec.SetField(patient.FieldUpdatedBy, field.TypeUUID, value)
+		_node.UpdatedBy = value
+	}
+	if nodes := pc.mutation.MedicalHistoryIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   patient.InpatientsTable,
-			Columns: []string{patient.InpatientsColumn},
+			Table:   patient.MedicalHistoryTable,
+			Columns: []string{patient.MedicalHistoryColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(inpatient.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := pc.mutation.OutpatientsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   patient.OutpatientsTable,
-			Columns: []string{patient.OutpatientsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(outpatient.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(medicalhistories.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -296,7 +315,7 @@ func (pc *PatientCreate) createSpec() (*Patient, *sqlgraph.CreateSpec) {
 // of the `INSERT` statement. For example:
 //
 //	client.Patient.Create().
-//		SetPhoneNumber(v).
+//		SetPhone(v).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -305,7 +324,7 @@ func (pc *PatientCreate) createSpec() (*Patient, *sqlgraph.CreateSpec) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.PatientUpsert) {
-//			SetPhoneNumber(v+v).
+//			SetPhone(v+v).
 //		}).
 //		Exec(ctx)
 func (pc *PatientCreate) OnConflict(opts ...sql.ConflictOption) *PatientUpsertOne {
@@ -341,15 +360,15 @@ type (
 	}
 )
 
-// SetPhoneNumber sets the "phone_number" field.
-func (u *PatientUpsert) SetPhoneNumber(v string) *PatientUpsert {
-	u.Set(patient.FieldPhoneNumber, v)
+// SetPhone sets the "phone" field.
+func (u *PatientUpsert) SetPhone(v string) *PatientUpsert {
+	u.Set(patient.FieldPhone, v)
 	return u
 }
 
-// UpdatePhoneNumber sets the "phone_number" field to the value that was provided on create.
-func (u *PatientUpsert) UpdatePhoneNumber() *PatientUpsert {
-	u.SetExcluded(patient.FieldPhoneNumber)
+// UpdatePhone sets the "phone" field to the value that was provided on create.
+func (u *PatientUpsert) UpdatePhone() *PatientUpsert {
+	u.SetExcluded(patient.FieldPhone)
 	return u
 }
 
@@ -419,21 +438,51 @@ func (u *PatientUpsert) UpdateDateOfBirth() *PatientUpsert {
 	return u
 }
 
-// SetCurrentPatientType sets the "current_patient_type" field.
-func (u *PatientUpsert) SetCurrentPatientType(v int32) *PatientUpsert {
-	u.Set(patient.FieldCurrentPatientType, v)
+// SetCreatedAt sets the "created_at" field.
+func (u *PatientUpsert) SetCreatedAt(v time.Time) *PatientUpsert {
+	u.Set(patient.FieldCreatedAt, v)
 	return u
 }
 
-// UpdateCurrentPatientType sets the "current_patient_type" field to the value that was provided on create.
-func (u *PatientUpsert) UpdateCurrentPatientType() *PatientUpsert {
-	u.SetExcluded(patient.FieldCurrentPatientType)
+// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
+func (u *PatientUpsert) UpdateCreatedAt() *PatientUpsert {
+	u.SetExcluded(patient.FieldCreatedAt)
 	return u
 }
 
-// AddCurrentPatientType adds v to the "current_patient_type" field.
-func (u *PatientUpsert) AddCurrentPatientType(v int32) *PatientUpsert {
-	u.Add(patient.FieldCurrentPatientType, v)
+// SetUpdatedAt sets the "updated_at" field.
+func (u *PatientUpsert) SetUpdatedAt(v time.Time) *PatientUpsert {
+	u.Set(patient.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *PatientUpsert) UpdateUpdatedAt() *PatientUpsert {
+	u.SetExcluded(patient.FieldUpdatedAt)
+	return u
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *PatientUpsert) SetCreatedBy(v uuid.UUID) *PatientUpsert {
+	u.Set(patient.FieldCreatedBy, v)
+	return u
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *PatientUpsert) UpdateCreatedBy() *PatientUpsert {
+	u.SetExcluded(patient.FieldCreatedBy)
+	return u
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (u *PatientUpsert) SetUpdatedBy(v uuid.UUID) *PatientUpsert {
+	u.Set(patient.FieldUpdatedBy, v)
+	return u
+}
+
+// UpdateUpdatedBy sets the "updated_by" field to the value that was provided on create.
+func (u *PatientUpsert) UpdateUpdatedBy() *PatientUpsert {
+	u.SetExcluded(patient.FieldUpdatedBy)
 	return u
 }
 
@@ -485,17 +534,17 @@ func (u *PatientUpsertOne) Update(set func(*PatientUpsert)) *PatientUpsertOne {
 	return u
 }
 
-// SetPhoneNumber sets the "phone_number" field.
-func (u *PatientUpsertOne) SetPhoneNumber(v string) *PatientUpsertOne {
+// SetPhone sets the "phone" field.
+func (u *PatientUpsertOne) SetPhone(v string) *PatientUpsertOne {
 	return u.Update(func(s *PatientUpsert) {
-		s.SetPhoneNumber(v)
+		s.SetPhone(v)
 	})
 }
 
-// UpdatePhoneNumber sets the "phone_number" field to the value that was provided on create.
-func (u *PatientUpsertOne) UpdatePhoneNumber() *PatientUpsertOne {
+// UpdatePhone sets the "phone" field to the value that was provided on create.
+func (u *PatientUpsertOne) UpdatePhone() *PatientUpsertOne {
 	return u.Update(func(s *PatientUpsert) {
-		s.UpdatePhoneNumber()
+		s.UpdatePhone()
 	})
 }
 
@@ -576,24 +625,59 @@ func (u *PatientUpsertOne) UpdateDateOfBirth() *PatientUpsertOne {
 	})
 }
 
-// SetCurrentPatientType sets the "current_patient_type" field.
-func (u *PatientUpsertOne) SetCurrentPatientType(v int32) *PatientUpsertOne {
+// SetCreatedAt sets the "created_at" field.
+func (u *PatientUpsertOne) SetCreatedAt(v time.Time) *PatientUpsertOne {
 	return u.Update(func(s *PatientUpsert) {
-		s.SetCurrentPatientType(v)
+		s.SetCreatedAt(v)
 	})
 }
 
-// AddCurrentPatientType adds v to the "current_patient_type" field.
-func (u *PatientUpsertOne) AddCurrentPatientType(v int32) *PatientUpsertOne {
+// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
+func (u *PatientUpsertOne) UpdateCreatedAt() *PatientUpsertOne {
 	return u.Update(func(s *PatientUpsert) {
-		s.AddCurrentPatientType(v)
+		s.UpdateCreatedAt()
 	})
 }
 
-// UpdateCurrentPatientType sets the "current_patient_type" field to the value that was provided on create.
-func (u *PatientUpsertOne) UpdateCurrentPatientType() *PatientUpsertOne {
+// SetUpdatedAt sets the "updated_at" field.
+func (u *PatientUpsertOne) SetUpdatedAt(v time.Time) *PatientUpsertOne {
 	return u.Update(func(s *PatientUpsert) {
-		s.UpdateCurrentPatientType()
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *PatientUpsertOne) UpdateUpdatedAt() *PatientUpsertOne {
+	return u.Update(func(s *PatientUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *PatientUpsertOne) SetCreatedBy(v uuid.UUID) *PatientUpsertOne {
+	return u.Update(func(s *PatientUpsert) {
+		s.SetCreatedBy(v)
+	})
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *PatientUpsertOne) UpdateCreatedBy() *PatientUpsertOne {
+	return u.Update(func(s *PatientUpsert) {
+		s.UpdateCreatedBy()
+	})
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (u *PatientUpsertOne) SetUpdatedBy(v uuid.UUID) *PatientUpsertOne {
+	return u.Update(func(s *PatientUpsert) {
+		s.SetUpdatedBy(v)
+	})
+}
+
+// UpdateUpdatedBy sets the "updated_by" field to the value that was provided on create.
+func (u *PatientUpsertOne) UpdateUpdatedBy() *PatientUpsertOne {
+	return u.Update(func(s *PatientUpsert) {
+		s.UpdateUpdatedBy()
 	})
 }
 
@@ -733,7 +817,7 @@ func (pcb *PatientCreateBulk) ExecX(ctx context.Context) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.PatientUpsert) {
-//			SetPhoneNumber(v+v).
+//			SetPhone(v+v).
 //		}).
 //		Exec(ctx)
 func (pcb *PatientCreateBulk) OnConflict(opts ...sql.ConflictOption) *PatientUpsertBulk {
@@ -812,17 +896,17 @@ func (u *PatientUpsertBulk) Update(set func(*PatientUpsert)) *PatientUpsertBulk 
 	return u
 }
 
-// SetPhoneNumber sets the "phone_number" field.
-func (u *PatientUpsertBulk) SetPhoneNumber(v string) *PatientUpsertBulk {
+// SetPhone sets the "phone" field.
+func (u *PatientUpsertBulk) SetPhone(v string) *PatientUpsertBulk {
 	return u.Update(func(s *PatientUpsert) {
-		s.SetPhoneNumber(v)
+		s.SetPhone(v)
 	})
 }
 
-// UpdatePhoneNumber sets the "phone_number" field to the value that was provided on create.
-func (u *PatientUpsertBulk) UpdatePhoneNumber() *PatientUpsertBulk {
+// UpdatePhone sets the "phone" field to the value that was provided on create.
+func (u *PatientUpsertBulk) UpdatePhone() *PatientUpsertBulk {
 	return u.Update(func(s *PatientUpsert) {
-		s.UpdatePhoneNumber()
+		s.UpdatePhone()
 	})
 }
 
@@ -903,24 +987,59 @@ func (u *PatientUpsertBulk) UpdateDateOfBirth() *PatientUpsertBulk {
 	})
 }
 
-// SetCurrentPatientType sets the "current_patient_type" field.
-func (u *PatientUpsertBulk) SetCurrentPatientType(v int32) *PatientUpsertBulk {
+// SetCreatedAt sets the "created_at" field.
+func (u *PatientUpsertBulk) SetCreatedAt(v time.Time) *PatientUpsertBulk {
 	return u.Update(func(s *PatientUpsert) {
-		s.SetCurrentPatientType(v)
+		s.SetCreatedAt(v)
 	})
 }
 
-// AddCurrentPatientType adds v to the "current_patient_type" field.
-func (u *PatientUpsertBulk) AddCurrentPatientType(v int32) *PatientUpsertBulk {
+// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
+func (u *PatientUpsertBulk) UpdateCreatedAt() *PatientUpsertBulk {
 	return u.Update(func(s *PatientUpsert) {
-		s.AddCurrentPatientType(v)
+		s.UpdateCreatedAt()
 	})
 }
 
-// UpdateCurrentPatientType sets the "current_patient_type" field to the value that was provided on create.
-func (u *PatientUpsertBulk) UpdateCurrentPatientType() *PatientUpsertBulk {
+// SetUpdatedAt sets the "updated_at" field.
+func (u *PatientUpsertBulk) SetUpdatedAt(v time.Time) *PatientUpsertBulk {
 	return u.Update(func(s *PatientUpsert) {
-		s.UpdateCurrentPatientType()
+		s.SetUpdatedAt(v)
+	})
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *PatientUpsertBulk) UpdateUpdatedAt() *PatientUpsertBulk {
+	return u.Update(func(s *PatientUpsert) {
+		s.UpdateUpdatedAt()
+	})
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (u *PatientUpsertBulk) SetCreatedBy(v uuid.UUID) *PatientUpsertBulk {
+	return u.Update(func(s *PatientUpsert) {
+		s.SetCreatedBy(v)
+	})
+}
+
+// UpdateCreatedBy sets the "created_by" field to the value that was provided on create.
+func (u *PatientUpsertBulk) UpdateCreatedBy() *PatientUpsertBulk {
+	return u.Update(func(s *PatientUpsert) {
+		s.UpdateCreatedBy()
+	})
+}
+
+// SetUpdatedBy sets the "updated_by" field.
+func (u *PatientUpsertBulk) SetUpdatedBy(v uuid.UUID) *PatientUpsertBulk {
+	return u.Update(func(s *PatientUpsert) {
+		s.SetUpdatedBy(v)
+	})
+}
+
+// UpdateUpdatedBy sets the "updated_by" field to the value that was provided on create.
+func (u *PatientUpsertBulk) UpdateUpdatedBy() *PatientUpsertBulk {
+	return u.Update(func(s *PatientUpsert) {
+		s.UpdateUpdatedBy()
 	})
 }
 
